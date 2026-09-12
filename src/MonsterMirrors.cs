@@ -6,6 +6,10 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Entities.Ascension;
+using MegaCrit.Sts2.Core.Helpers;
+using CombatSolver.Engine.InCombat.Extensions;
+using RebalancedSpire.Core.Afflictions;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver;
@@ -140,6 +144,127 @@ internal static class MonsterMirrors
                 simulator.AddToCombat<FranticEscape>(player, PileType.Discard, 3, null, CardPilePosition.Random);
                 __result = true;
                 return false;
+
+            // 咒缚：原版 2 层诅咒；改版每个目标 1 层，外加自己一层虚无。
+            case ("SpectralKnight", "HEX_MOVE") when settings.Knights:
+                combat.ApplyFromMonster<HexPower>(player, 1, owner);
+                combat.Apply<IntangiblePower>(owner, 1, owner);
+                __result = true;
+                return false;
+
+            // 吸取拥抱：原版虚弱 3 + 自己 3 力量；改版只剩虚弱 3。
+            case ("SlimedBerserker", "LEECHING_HUG_MOVE") when settings.SlimedBerserker:
+                combat.ApplyFromMonster<WeakPower>(player, 3, owner);
+                __result = true;
+                return false;
+
+            // 呕吐黏液：原版塞 10 张黏液；改版塞 5 张，并给自己一层「吸取拥抱」。
+            case ("SlimedBerserker", "VOMIT_ICHOR_MOVE") when settings.SlimedBerserker:
+                simulator.AddToCombat<Slimed>(player, PileType.Discard, 5, null);
+                if (simulator.HasPendingChoice)
+                    return false;
+                combat.Apply<LeechingHugPower>(owner, 1, owner);
+                __result = true;
+                return false;
+
+            // 沉思：原版回 30 × 人数；改版 20 × 人数。力量那半两边一样。
+            case ("KnowledgeDemon", "PONDER_MOVE") when settings.KnowledgeDemon:
+                simulator.Heal(owner, 20 * combat.Players.Count);
+                if (simulator.HasPendingChoice)
+                    return false;
+                combat.Apply<StrengthPower>(
+                    owner, combat.GetMonsterStaticInt(owner, "PonderStrength"), owner);
+                __result = true;
+                return false;
+
+            // 苏醒：原版 10 力量；改版 3。
+            case ("BygoneEffigy", "WAKE_MOVE") when settings.BygoneEffigy:
+                combat.Apply<StrengthPower>(owner, 3, owner);
+                __result = true;
+                return false;
+
+            // 快拳：原版上脆弱；改版改成虚弱。
+            case ("PunchConstruct", "FAST_PUNCH_MOVE") when settings.PunchOff:
+                combat.ApplyFromMonster<WeakPower>(player, 1, owner);
+                __result = true;
+                return false;
+
+            // 狂怒：原版只加 3 力量；改版加甲 6（九阶 7）再加 2 力量。
+            case ("SludgeSpinner", "RAGE_MOVE") when settings.SludgeSpinner:
+                simulator.GainBlock(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 7, 6),
+                    ValueProp.Move);
+                if (simulator.HasPendingChoice)
+                    return false;
+                combat.Apply<StrengthPower>(owner, 2, owner);
+                __result = true;
+                return false;
+
+            // 尖叫 / 分神：原版 3 张恍惚；改版 2 张。
+            case ("Chomper", "SCREECH_MOVE") when settings.Chomper:
+            case ("EyeWithTeeth", "DISTRACT_MOVE") when settings.Fogmog:
+                simulator.AddToCombat<Dazed>(player, PileType.Discard, 2, null);
+                __result = true;
+                return false;
+
+            // 喷火：原版 4 张灼烧进手牌；改版 2 张。
+            case ("MechaKnight", "FLAMETHROWER_MOVE") when settings.MechaKnight:
+                simulator.AddToCombat<Burn>(player, PileType.Hand, 2, null);
+                __result = true;
+                return false;
+
+            // 剧毒：原版 2 张毒物进手牌；改版 1 张。
+            case ("Myte", "TOXIC_MOVE") when settings.Myte:
+                simulator.AddToCombat<Toxic>(player, PileType.Hand, 1, null);
+                __result = true;
+                return false;
+
+            // 感染：原版固定 3 张；改版按自己身上「寄生+」的层数给，没有就一张都不给。
+            case ("PhrogParasite", "INFECT_MOVE") when settings.PhrogParasite:
+            {
+                int infested = combat.GetAmount<InfestedPlusPower>(owner);
+                if (infested > 0)
+                    simulator.AddToCombat<Infection>(player, PileType.Discard, infested, null);
+                __result = true;
+                return false;
+            }
+
+            // 噪音：原版弃牌堆和抽牌堆各一张恍惚；改版两张都进弃牌堆。
+            case ("Noisebot", "NOISE_MOVE") when settings.Fabricator:
+                simulator.AddToCombat<Dazed>(player, PileType.Discard, 1, null);
+                __result = true;
+                return false;
+
+            // 凋零：原版是「把手上的枯萎升一级再塞几张新的」；改版整个换了 ——
+            // 给玩家挂一层 12 点的「凋零之威」，再塞 4 张已经假升级两级、且带「凋零」病症的枯萎，
+            // 前两张进抽牌堆、后两张进弃牌堆。
+            case ("Aeonglass", "WITHERING_MOVE") when settings.Aeonglass:
+            {
+                if (player.Player is not { } witherOwner)
+                    return true;
+                combat.ApplyTargeted<WitheringPresencePlusPower>(owner, player, 12, owner);
+                if (simulator.HasPendingChoice)
+                    return false;
+                foreach ((PileType pile, int count) in new[] { (PileType.Draw, 2), (PileType.Discard, 2) })
+                {
+                    foreach (var added in simulator
+                                 .CreateAndAddGeneratedCardsToCombat<Wither>(
+                                     witherOwner, pile, count, witherOwner, CardPilePosition.Random))
+                    {
+                        if (added.CardAdded.MutablePreview is Wither wither)
+                        {
+                            wither.FakeUpgrade();
+                            wither.FakeUpgrade();
+                        }
+                        simulator.Afflict<Withering>(added.CardAdded, 1m);
+                    }
+                    if (simulator.HasPendingChoice)
+                        return false;
+                }
+                __result = true;
+                return false;
+            }
 
             // 辐射：改版只剩攻击，原版那份加甲没了。
             case ("InfestedPrism", "RADIATE_MOVE") when settings.InfestedPrism:

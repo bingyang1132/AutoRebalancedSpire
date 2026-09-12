@@ -123,7 +123,7 @@
   先前漏判是因为 ilspy 解不出这些补丁的 `[HarmonyPatch]` 参数，我按能解出来的那份表统计，
   只看到 5 个 —— 后来按**方法体**重扫才看出真实规模。
   伤害数值不用管（求解器按意图读，自动跟随），要逐条核的是那 85 个招式的非攻击部分。
-  清单和用法见 `docs/monster-move-audit.md`。已核过并修好 9 个，剩下的还没逐条比。44 张 `GenerateMoveStateMachine` 理论上自动跟随（求解器读的是怪物身上
+  清单和用法见 `docs/monster-move-audit.md`。**已核过并修好 22 个**（都是真有差异的），剩下的还没逐条比。44 张 `GenerateMoveStateMachine` 理论上自动跟随（求解器读的是怪物身上
   活的那张表），但要实测抽查几个确认，特别是改了 `AfterAddedToRoom`（改血量/初始 Power）的那 22 个。
 - [x] **9.2 被重写的单招**（差 `KnowledgeDemon.ChooseCurse` 一条）。求解器模拟敌人招式走
   `MonsterMoveEffects.Apply` 里一张按「怪物类型名 + 招式 id」的大表，不是注册表，所以挂前缀：
