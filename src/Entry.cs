@@ -46,6 +46,7 @@ public static class Entry
                 + MonsterMirrors.RegisterAll()
                 + OrbPowerMirrors.RegisterAll()
                 + NewCardMirrors.RegisterAll()
+                + EncounterPowerMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
@@ -73,6 +74,10 @@ public static class Entry
             harmony.Patch(
                 MonsterMirrors.ResolveApplyTarget(),
                 prefix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.ApplyPrefix)));
+            harmony.Patch(
+                EncounterPowerMirrors.ResolveEnergySpentTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(EncounterPowerMirrors), nameof(EncounterPowerMirrors.EnergySpentPostfix)));
             harmony.Patch(
                 PowerMirrors.ResolveHandDrawTarget(),
                 postfix: new HarmonyMethod(typeof(PowerMirrors), nameof(PowerMirrors.HandDrawPostfix)));

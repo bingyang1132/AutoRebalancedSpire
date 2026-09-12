@@ -57,6 +57,7 @@ internal static class AdapterSelfCheck
             _ = RelicStatefulMirrors.ResolveStarCostTarget();
             _ = MonsterMirrors.ResolveApplyTarget();
             _ = PowerMirrors.ResolveHandDrawTarget();
+            _ = EncounterPowerMirrors.ResolveEnergySpentTarget();
             _ = ExtraTurnPatch.ResolvePrepareTarget();
             _ = ExtraTurnPatch.ResolveLivePrepareTarget();
             _ = ExtraTurnPatch.ResolveConsumeTarget();

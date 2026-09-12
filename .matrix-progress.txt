@@ -1,2 +1,5 @@
 
 17:34:06 开始 共 8 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
+17:34:47 [1/8] RS-UNTOUCHABLE-REPEAT-BLOCK 通过
+17:35:27 [2/8] RS-ETERNAL-ARMOR-PLATING 未通过
+17:36:09 [3/8] RS-FUEL-ENERGY-DRAW 通过

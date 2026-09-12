@@ -146,9 +146,15 @@
 
 **33 张改动牌的 `OnPlay` 全部镜像完毕。** 剩下的是：
 
-1. **新 Power 自己的钩子**。牌把 Power 上上去了，Power 的行为还没逐个补 —— 没补的走求解器的
-   未镜像风险，会显示成红字，不会静默算错。已补：SpinnerPlusPower、AfterlifePower、
-   PingPongPower、SandsOfTimePower、DiamondDiademPower（自动）、EternalArmorPower（纯标记）。
+1. **新 Power 自己的钩子**。已补 14 个：SpinnerPlus、Afterlife、PingPong、SandsOfTime、
+   DiamondDiadem（自动）、EternalArmor（纯标记）、ReaperFormPlus、SicEmPlus、MasterPlannerPlus、
+   InfiniteBladesPlus、SynchronizePlus、ConsumingShadowPlus、CorpseExplosion、LeechingHug、
+   SoulWither、WitheringPresencePlus。
+   **没补的**：门匠的全能（Omnidynamics）、织机的制造者（Fabricator）、寄生棱镜的感染+
+   （InfestedPlus）、亲随的守护（Guard）、假随从（MinionFake）、耕耘+ / 被耕耘（Plow*）、
+   拜尔多尼斯的归还（ToItsOriginOwner）、幻灭（Disillusion）。
+   这些全是**动作类钩子**，没登记会记一条未镜像风险、显示成红字，不会静默算错；
+   它们的取值类钩子（伤害倍率、能不能被选中、费用修正）本来就会回落到 Power 自己的实现。
 2. ~~三张只改了钩子的牌~~ —— RightHandHand 和 RocketPunch 已做（两张求解器都登记过，
    走 0.2 那套换掉）。**Bolas 不做**：它改的是 `BeforeHandDraw`，而求解器的
    `TriggerBeforeHandDraw` 只遍历 Power，**牌的这个钩子从来不分发** —— 原版 Bolas 在求解器里
