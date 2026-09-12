@@ -77,4 +77,34 @@ internal static class Verbs
     /// <summary>施加任意 PowerModel，包括 RebalancedSpire 自己新加的那 33 个。</summary>
     public static void Power(CardOnPlayMirrorContext context, Type powerType, int amount)
         => Effects(context).ApplyPower(powerType, Self(context), amount, Self(context));
+
+    public static void PowerOn(
+        CardOnPlayMirrorContext context, Type powerType, Creature target, int amount)
+        => Effects(context).ApplyPower(powerType, target, amount, Self(context));
+
+    // ---------- 攻击 ----------
+
+    /// <summary>按牌自己的伤害变量打全体敌人。</summary>
+    public static void AttackAllEnemies(CardOnPlayMirrorContext context, int hits = 1)
+        => context.AttackAllOpponents(hits);
+
+    // ---------- 说不清的地方 ----------
+
+    /// <summary>这一处没能完整镜像，显式记一条风险，让求解器把它显示成红色。</summary>
+    /// <remarks>
+    /// 宁可红字也不要静默算错 —— 这是整个项目的底线。放行名单里有这张牌、但效果没补全时，
+    /// 必须走这里。
+    /// </remarks>
+    public static void Unmirrored(CardOnPlayMirrorContext context, string what)
+    {
+        EngineDiagnostics.Warn($"[AutoRebalancedSpire] 未镜像：{what}");
+        context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+    }
+
+    /// <summary>这一处需要玩家在结算中做选择，而我们还没为它开分支。</summary>
+    public static void PlayerChoice(CardOnPlayMirrorContext context, string what)
+    {
+        EngineDiagnostics.Warn($"[AutoRebalancedSpire] 未建模的结算内选择：{what}");
+        context.History.RecordRisk(PredictionRiskReason.UnresolvedPlayerChoice);
+    }
 }

@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.InCombat.Simulation;
+using CombatSolver;
 using CombatSolver.Engine.InCombat.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using RebalancedSpire.Core.Configs;
@@ -106,6 +107,72 @@ internal static class CardMirrors
         => V.GainEnergy(context, V.RequireVar(card, "CalculatedEnergy")
             .InvokeCalculate(context.Simulator, context.Card, context.CardPlay.Target));
 
+    // ---------- Regent ----------
+
+    /// <summary>必然结局：上一层「必然结局+」。</summary>
+    /// <remarks>
+    /// 层数取的是牌的 <c>Cards</c> 变量。那个 Power 每回合发牌前让你从抽牌堆挑几张放到牌堆顶，
+    /// 见 <see cref="PowerMirrors" />。
+    /// </remarks>
+    private static void ForegoneConclusion(ForegoneConclusion card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(ForegoneConclusionPlusPower), V.VarInt(card, "Cards"));
+
+    /// <summary>传家宝锤：锻造若干次，然后从手牌选一张无色牌，复制一份进手牌。</summary>
+    /// <remarks>
+    /// 锻造那半是确定的，照结算。选牌那半求解器没有为它开分支，显式记一条「未建模的选择」——
+    /// 宁可红字也不要静默按「没选」算，那会把这张牌的价值整个抹掉。
+    /// </remarks>
+    private static void HeirloomHammer(HeirloomHammer card, CardOnPlayMirrorContext context)
+    {
+        PersistentPowerSupport.Forge(context.Simulator, card.Owner, V.VarInt(card, "Forge"));
+        if (context.Simulator.HasPendingChoice)
+            return;
+        V.PlayerChoice(context, "传家宝锤从手牌里选一张无色牌复制");
+    }
+
+    // ---------- Ironclad ----------
+
+    /// <summary>坦克：上一层「坦克+」。</summary>
+    /// <remarks>
+    /// 那个 Power 在回合结束前给**其他**玩家角色加甲 —— 单人局里没有别的玩家角色，
+    /// 所以它在单人局是个空转。这里照样把层数上上去：层数本身会进指纹，也会被别的效果读到。
+    /// </remarks>
+    private static void Tank(Tank card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(TankPlusPower), V.VarInt(card, "TankPlusPower"));
+
+    /// <summary>遗忘仪式：本回合消耗过牌就给能量，然后自己本场费用 +1。</summary>
+    /// <remarks>
+    /// 原版是无条件给能量。改版加了「本回合消耗过牌」这个前提，还加了自己越打越贵。
+    /// 两条都要补：少了前提会高估，少了涨价会让连打的路线便宜一大截。
+    /// </remarks>
+    private static void ForgottenRitual(ForgottenRitual card, CardOnPlayMirrorContext context)
+    {
+        if (V.Combat(context).WasCardExhaustedThisTurn(V.Self(context)))
+            V.GainEnergy(context, V.Var(card, "Energy"));
+        context.MutablePreviewCard.EnergyCost.AddThisCombat(1);
+    }
+
+    // ---------- 无色 ----------
+
+    /// <summary>永恒护甲：给镀甲，再上一层「永恒护甲」。</summary>
+    /// <remarks>
+    /// 那一层是个纯标记，唯一作用是让镀甲不再每回合衰减，见 <see cref="PlatingDecayPatch" />。
+    /// </remarks>
+    private static void EternalArmor(EternalArmor card, CardOnPlayMirrorContext context)
+    {
+        V.Power(context, typeof(PlatingPower), V.VarInt(card, "PlatingPower"));
+        V.Power(context, typeof(EternalArmorPower), V.VarInt(card, "EternalArmorPower"));
+    }
+
+    /// <summary>齐射：打全体，然后给自己一层「保留手牌」。</summary>
+    private static void Salvo(Salvo card, CardOnPlayMirrorContext context)
+    {
+        V.AttackAllEnemies(context);
+        if (context.Simulator.HasPendingChoice)
+            return;
+        V.Power(context, typeof(RetainHandPower), 1);
+    }
+
     public static IEnumerable<MirroredCard> All()
     {
         yield return MirroredCard.For<Fuel>(
@@ -126,6 +193,24 @@ internal static class CardMirrors
         yield return MirroredCard.For<ExpectAFight>(
             settings => settings.ExpectAFight,
             registry => registry.Register<ExpectAFight>(ExpectAFight));
+        yield return MirroredCard.For<ForegoneConclusion>(
+            settings => settings.ForegoneConclusion,
+            registry => registry.Register<ForegoneConclusion>(ForegoneConclusion));
+        yield return MirroredCard.For<HeirloomHammer>(
+            settings => settings.HeirloomHammer,
+            registry => registry.Register<HeirloomHammer>(HeirloomHammer));
+        yield return MirroredCard.For<Tank>(
+            settings => settings.Tank,
+            registry => registry.Register<Tank>(Tank));
+        yield return MirroredCard.For<ForgottenRitual>(
+            settings => settings.ForgottenRitual,
+            registry => registry.Register<ForgottenRitual>(ForgottenRitual));
+        yield return MirroredCard.For<EternalArmor>(
+            settings => settings.EternalArmor,
+            registry => registry.Register<EternalArmor>(EternalArmor));
+        yield return MirroredCard.For<Salvo>(
+            settings => settings.Salvo,
+            registry => registry.Register<Salvo>(Salvo));
         yield return MirroredCard.For<Spinner>(
             settings => settings.Spinner,
             registry => registry.Register<Spinner>(Spinner),
