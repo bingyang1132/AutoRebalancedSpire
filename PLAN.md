@@ -52,11 +52,16 @@
   跑的结果镜像）。改伤害的那几个方法**不用镜像**：求解器算附魔伤害直接调附魔自己的
   `EnchantDamage*`，`ModifyDamageMultiplicative` 没登记也会回落到监听者自己的实现 ——
   所以 `Inky` 被改过的加伤公式、充能的「这张牌不造成伤害」都是自动跟上的。
-- [ ] **1.3 病症**。`Tainted` 改成不可叠加（`IsStackable` 是取值方法，多半自动跟随，待确认）；
+- [x] **1.3 病症**（新病症本身做完；两个源头 Power 归怪物批）。`Tainted` 改成不可叠加（`IsStackable` 是取值方法，多半自动跟随，待确认）；
   新病症 **Devoured、Weighted**（`AfterCardEnteredCombat` 里按持有者有没有某个 Power 决定
   清不清掉自己 —— 求解器那个时点是写死的 switch，**不分发给病症**，又是一个要打补丁的缺口）、
-  **Withering**（`OnPlay` 改假升级层数 + 上 `SandsOfTimePower`；`AfterCardExhausted` 把枯萎塞回
-  弃牌堆）、**ToItsOriginOwner**（拜尔多尼斯专属，归怪物批）。
+  **Withering**（`OnPlay` 第一次打出把枯萎假升级两级、本场费用 +1、给一层时之沙，之后每次退一级；
+  `AfterCardExhausted` 把枯萎塞回弃牌堆 —— 也就是这张牌消耗不掉，不镜像会把一条还会持续吃伤害的
+  路线算成安全的）、**ToItsOriginOwner**（拜尔多尼斯专属，归怪物批）。
+  连带做了 **SandsOfTimePower** 的额外回合：求解器只认遗物给的额外回合，Power 给的看不见，
+  照 AutoWatcher 给腾跃写的那份补丁做。
+  `HungerPower` / `ScrutinyPower` 这两个源头 Power（施加病症、改关键字、改手牌上限、
+  源头死了就收回）归**怪物批**，它们属于寄生棱镜和幻影园丁。
 - [x] **1.4 状态牌 Wither**。求解器登记的是通用的「吃 Damage 点伤害」，用 0.2 那套换掉。
   改版：没带「凋零」病症时吃固定 6 点（新变量 `Fixed`，属性 Unpowered|Move）；带了病症则只有
   假升级层数不为 0 才吃 `Damage`（改版基数是 0，每层加 `PerLevel`=3）。按原版算会把一张会

@@ -46,6 +46,10 @@ internal static class AdapterSelfCheck
             _ = CalculatedVarPatch.ResolveTarget();
             _ = AfterEnergyResetLateDispatch.ResolveTarget();
             _ = PlatingDecayPatch.ResolveTarget();
+            _ = CardEnteredCombatPatch.ResolveTarget();
+            _ = ExtraTurnPatch.ResolvePrepareTarget();
+            _ = ExtraTurnPatch.ResolveLivePrepareTarget();
+            _ = ExtraTurnPatch.ResolveConsumeTarget();
         }
         catch (MissingMethodException ex)
         {

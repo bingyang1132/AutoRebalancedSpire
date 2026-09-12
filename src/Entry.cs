@@ -41,7 +41,9 @@ public static class Entry
             MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> onPlay = CardOnPlayMirrors.Registry;
             registered = MirroredCards.RegisterAll(onPlay);
             registeredPowers = PowerMirrors.RegisterAll();
-            registeredOther = EnchantmentMirrors.RegisterAll() + MirroredCards.ReplaceHooks();
+            registeredOther = EnchantmentMirrors.RegisterAll()
+                + AfflictionMirrors.RegisterAll()
+                + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
         {
@@ -64,6 +66,21 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 牌进场时两个新病症要自查源头 Power 还在不在，求解器那个时点也是写死的 switch。
+            harmony.Patch(
+                CardEnteredCombatPatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(CardEnteredCombatPatch), nameof(CardEnteredCombatPatch.Postfix)));
+            // 额外回合求解器只认遗物给的，Power 给的看不见。
+            harmony.Patch(
+                ExtraTurnPatch.ResolvePrepareTarget(),
+                postfix: new HarmonyMethod(typeof(ExtraTurnPatch), nameof(ExtraTurnPatch.PreparePostfix)));
+            harmony.Patch(
+                ExtraTurnPatch.ResolveLivePrepareTarget(),
+                postfix: new HarmonyMethod(typeof(ExtraTurnPatch), nameof(ExtraTurnPatch.PreparePostfix)));
+            harmony.Patch(
+                ExtraTurnPatch.ResolveConsumeTarget(),
+                postfix: new HarmonyMethod(typeof(ExtraTurnPatch), nameof(ExtraTurnPatch.ConsumePostfix)));
             // 回合开始晚段求解器只跑一个遗物，Power 一个都不发，只能挂在它后面自己分发。
             harmony.Patch(
                 AfterEnergyResetLateDispatch.ResolveTarget(),
