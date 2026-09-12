@@ -1,10 +1,13 @@
+using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using RebalancedSpire.Core.Enchantments;
+using CombatSolver.Engine.InCombat.Extensions;
 using CombatSolver.Engine.InCombat.Simulation;
+using MegaCrit.Sts2.Core.Commands;
 using CombatSolver;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors;
@@ -298,6 +301,121 @@ internal static class CardMirrors
     private static void Synchronize(Synchronize card, CardOnPlayMirrorContext context)
         => V.Power(context, typeof(SynchronizePlusPower), V.VarInt(card, "SynchronizePlusPower"));
 
+    // ---------- Necrobinder ----------
+
+    /// <summary>往世：上一层「往世」。</summary>
+    /// <remarks>
+    /// 那一层每回合开始（晚段）在奥斯提不在时召唤一只、在时治疗它，
+    /// 见 <see cref="AfterEnergyResetLateDispatch" />。
+    /// </remarks>
+    private static void Afterlife(Afterlife card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(AfterlifePower), V.VarInt(card, "AfterlifePower"));
+
+    /// <summary>守墓人：加甲，然后造若干魂进抽牌堆，牌升级过则魂也升级。</summary>
+    private static void GraveWarden(GraveWarden card, CardOnPlayMirrorContext context)
+    {
+        V.Block(context);
+        if (context.Simulator.HasPendingChoice)
+            return;
+        V.SoulsInto(context, PileType.Draw, V.VarInt(card, "Cards"), card.IsUpgraded);
+    }
+
+    /// <summary>拉仇恨：召唤奥斯提，然后加甲。</summary>
+    /// <remarks>顺序照原样：先召唤再加甲，中间任何一步起了选择都要停。</remarks>
+    private static void PullAggro(PullAggro card, CardOnPlayMirrorContext context)
+    {
+        V.Combat(context).SummonOsty(context.Simulator, card.Owner, V.VarInt(card, "Summon"));
+        if (context.Simulator.HasPendingChoice)
+            return;
+        V.Block(context);
+    }
+
+    /// <summary>死神形态：升级过上「死神形态+」，没升级上原版那层。</summary>
+    /// <remarks>层数两边都读同一个变量 ReaperFormPower。</remarks>
+    private static void ReaperForm(ReaperForm card, CardOnPlayMirrorContext context)
+    {
+        int amount = V.VarInt(card, "ReaperFormPower");
+        V.Power(
+            context,
+            card.IsUpgraded ? typeof(ReaperFormPlusPower) : typeof(ReaperFormPower),
+            amount);
+    }
+
+    /// <summary>降灵会：从抽牌堆选若干张，each 转化成一个魂。</summary>
+    /// <remarks>
+    /// 选哪几张是玩家定的，求解器没开这个分支。转化本身会实际改牌组，
+    /// 所以这里只记一条「未建模的选择」，不擅自替某几张牌做决定。
+    /// </remarks>
+    private static void Seance(Seance card, CardOnPlayMirrorContext context)
+        => V.PlayerChoice(context, "降灵会从抽牌堆里选几张转化成魂");
+
+    /// <summary>叫咬：奥斯提攻击目标，然后给目标上一层「叫咬+」。</summary>
+    /// <remarks>奥斯提不在或已经死了就什么都不发生，照原样判。</remarks>
+    private static void SicEm(SicEm card, CardOnPlayMirrorContext context)
+    {
+        if (context.CardPlay.Target is not { } target)
+            return;
+        if (context.State.GetOsty(card.Owner) is not { } osty
+            || context.State.GetCreature(osty).IsDead)
+        {
+            return;
+        }
+
+        DamageCmd.Attack(V.Var(card, "OstyDamage"))
+            .FromOsty(osty, card, context.CardPlay)
+            .Targeting(target)
+            .Simulate(context.Simulator);
+        if (context.Simulator.HasPendingChoice)
+            return;
+
+        V.PowerOn(context, typeof(SicEmPlusPower), target, V.VarInt(card, "SicEmPlusPower"));
+    }
+
+    /// <summary>马刺：先把治疗量喂给奥斯提，喂不完的按一半召唤新的。</summary>
+    /// <remarks>
+    /// 照原样：治疗只补到满血为止，剩下的量除以二（取整）拿去召唤。奥斯提不在就整份拿去召唤。
+    /// </remarks>
+    private static void Spur(Spur card, CardOnPlayMirrorContext context)
+    {
+        decimal amount = V.Var(card, "Heal");
+        if (context.State.GetOsty(card.Owner) is { } osty
+            && context.State.GetCreature(osty) is { IsAlive: true } state)
+        {
+            decimal heal = Math.Min(amount, state.MaxHp - state.CurrentHp);
+            if (heal > 0)
+            {
+                context.Simulator.Heal(osty, heal);
+                amount -= heal;
+            }
+        }
+        if (amount <= 0)
+            return;
+        V.Combat(context).SummonOsty(context.Simulator, card.Owner, (int)(amount / 2m));
+    }
+
+    /// <summary>鬼火：给能量，然后把抽牌堆里随机一个魂变成鬼火自己的复制。</summary>
+    /// <remarks>
+    /// 随机取的那一步用求解器的洗牌通道，和实机取同一条随机序列。抽牌堆里没有魂就只给能量。
+    /// </remarks>
+    private static void Wisp(Wisp card, CardOnPlayMirrorContext context)
+    {
+        V.GainEnergy(context, V.Var(card, "Energy"));
+        if (context.Simulator.HasPendingChoice)
+            return;
+
+        PredictedCard[] souls = context.OwnerState.DrawPile.Cards
+            .Where(candidate => candidate.Preview is Soul)
+            .ToArray();
+        if (souls.Length == 0)
+            return;
+
+        PredictedCard chosen = souls.ToList()
+            .UnstableShuffle(context.Simulator.Rng.CombatCardSelection)
+            .First();
+        CardChoiceSupport.TransformCards(
+            context.Simulator, [chosen], CanonicalModels.Card<Wisp>(), card.IsUpgraded);
+    }
+
     public static IEnumerable<MirroredCard> All()
     {
         yield return MirroredCard.For<Fuel>(
@@ -376,6 +494,30 @@ internal static class CardMirrors
         yield return MirroredCard.For<Synchronize>(
             settings => settings.Synchronize,
             registry => registry.Register<Synchronize>(Synchronize));
+        yield return MirroredCard.For<Afterlife>(
+            settings => settings.Afterlife,
+            registry => registry.Register<Afterlife>(Afterlife));
+        yield return MirroredCard.For<GraveWarden>(
+            settings => settings.GraveWarden,
+            registry => registry.Register<GraveWarden>(GraveWarden));
+        yield return MirroredCard.For<PullAggro>(
+            settings => settings.PullAggro,
+            registry => registry.Register<PullAggro>(PullAggro));
+        yield return MirroredCard.For<ReaperForm>(
+            settings => settings.ReaperForm,
+            registry => registry.Register<ReaperForm>(ReaperForm));
+        yield return MirroredCard.For<Seance>(
+            settings => settings.Seance,
+            registry => registry.Register<Seance>(Seance));
+        yield return MirroredCard.For<SicEm>(
+            settings => settings.SicEm,
+            registry => registry.Register<SicEm>(SicEm));
+        yield return MirroredCard.For<Spur>(
+            settings => settings.Spur,
+            registry => registry.Register<Spur>(Spur));
+        yield return MirroredCard.For<Wisp>(
+            settings => settings.Wisp,
+            registry => registry.Register<Wisp>(Wisp));
         yield return MirroredCard.For<Spinner>(
             settings => settings.Spinner,
             registry => registry.Register<Spinner>(Spinner),

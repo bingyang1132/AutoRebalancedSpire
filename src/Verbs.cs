@@ -136,4 +136,21 @@ internal static class Verbs
                 context.Simulator.Upgrade(result.CardAdded);
         }
     }
+
+    /// <summary>造若干魂进指定牌堆，可选升级。</summary>
+    public static void SoulsInto(
+        CardOnPlayMirrorContext context,
+        PileType pile,
+        int count,
+        bool upgrade = false)
+    {
+        if (count <= 0)
+            return;
+        var added = context.Simulator.CreateAndAddGeneratedCardsToCombat<Soul>(
+            Owner(context), pile, count, Owner(context), CardPilePosition.Random);
+        if (!upgrade)
+            return;
+        foreach (var result in added)
+            context.Simulator.Upgrade(result.CardAdded);
+    }
 }

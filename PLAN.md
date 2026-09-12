@@ -92,25 +92,25 @@
 
 每个角色一批，做完给一个可测构建。括号里是这一批要镜像的牌。
 
-- [ ] **2. Necrobinder（9 张）**：Afterlife、GraveWarden、PullAggro、ReaperForm、Seance、
+- [x] **2. Necrobinder（8 张 OnPlay 已做，RightHandHand 的钩子待做）**：Afterlife、GraveWarden、PullAggro、ReaperForm、Seance、
   SicEm、Spur、Wisp、RightHandHand（`AfterCardPlayedLate`）。
   连带 Power：AfterlifePower、ReaperFormPlusPower、SicEmPlusPower、SoulWitherPower、
   GuardPower、MinionFakePower、LeechingHugPower。涉及召唤奥斯提和魂牌生成，最重的一批。
-- [ ] **3. Silent（8 张）**：HandTrick、HiddenDaggers、InfiniteBlades、MasterPlanner、
+- [x] **3. Silent（8 张）**：HandTrick、HiddenDaggers、InfiniteBlades、MasterPlanner、
   PoisonedStab、WellLaidPlans（Untouchable、UpMySleeve 已完成）。
   连带 Power：InfiniteBladesPlusPower、MasterPlannerPlusPower、WellLaidPlansPlusPower。
   依赖 1.2（匕首带的两个新附魔）。
-- [ ] **4. Defect（8 张）**：ConsumingShadow、Glasswork、Leap、Refract、Shatter、Spinner、
+- [x] **4. Defect（7 张 OnPlay 已做，RocketPunch 的钩子待做）**：ConsumingShadow、Glasswork、Leap、Refract、Shatter、Spinner、
   Synchronize、RocketPunch（`AfterCardGeneratedForCombat`）。
   连带 Power：ConsumingShadowPlusPower、LeapPower、SpinnerPlusPower、SynchronizePlusPower。
   **依赖 0.2**（其中 5 张求解器已登记）和 0.3（Synchronize）。
-- [ ] **5. Regent（2 张剩余）**：ForegoneConclusion、HeirloomHammer。
+- [x] **5. Regent**：ForegoneConclusion、HeirloomHammer。
   连带 Power：ForegoneConclusionPlusPower。（Glow、NeutronAegis 已完成）
-- [ ] **6. Ironclad（3 张）**：ExpectAFight、ForgottenRitual、Tank。
+- [x] **6. Ironclad**：ExpectAFight、ForgottenRitual、Tank。
   连带 Power：TankPlusPower。**依赖 0.3**（ExpectAFight）。
-- [ ] **7. 无色（3 张）**：EternalArmor、Salvo、Bolas（`BeforeHandDraw`）。
+- [x] **7. 无色（2 张 OnPlay 已做，Bolas 的钩子待做）**：EternalArmor、Salvo、Bolas（`BeforeHandDraw`）。
   连带 Power：EternalArmorPower。**依赖 1.1**（镀甲）。
-- [ ] **8. Token / Status**：Wither（见 1.4）。（Fuel 已完成）
+- [x] **8. Token / Status**：Wither（见 1.4）。（Fuel 已完成）
 
 ## 阶段 9：怪物与遭遇
 
@@ -138,6 +138,19 @@
 等前面做完再判断。
 
 ---
+
+## 还差什么（2026-09-12 晚）
+
+**33 张改动牌的 `OnPlay` 全部镜像完毕。** 剩下的是：
+
+1. **新 Power 自己的钩子**。牌把 Power 上上去了，Power 的行为还没逐个补 —— 没补的走求解器的
+   未镜像风险，会显示成红字，不会静默算错。已补：SpinnerPlusPower、AfterlifePower、
+   PingPongPower、SandsOfTimePower、DiamondDiademPower（自动）、EternalArmorPower（纯标记）。
+2. **三张只改了钩子、没改 `OnPlay` 的牌**：RightHandHand（`AfterCardPlayedLate`）、
+   RocketPunch（`AfterCardGeneratedForCombat`）、Bolas（`BeforeHandDraw`）。
+3. **两张新牌**：CorpseExplosion、LimitBreak（连带 CorpseExplosionPower）。
+4. **新 Boss Doormaker** 及其 `AttackCommand.TargetingRandomOpponents`、OmnidynamicsPower。
+5. `KnowledgeDemon.ChooseCurse`；饥饿 / 审视刚施加时的一次性感染和手牌上限修正。
 
 ## 进度
 
