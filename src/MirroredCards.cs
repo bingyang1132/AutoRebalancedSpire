@@ -76,7 +76,7 @@ internal static class MirroredCards
     {
         RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
         int replaced = 0;
-        foreach (MirroredHookReplacement hook in StatusCardMirrors.All().Concat(RelicMirrors.Replacements()))
+        foreach (MirroredHookReplacement hook in StatusCardMirrors.All().Concat(RelicMirrors.Replacements()).Concat(MonsterMirrors.Replacements()))
         {
             if (!hook.Toggle(settings))
                 continue;

@@ -43,6 +43,7 @@ public static class Entry
             registeredPowers = PowerMirrors.RegisterAll();
             registeredOther = EnchantmentMirrors.RegisterAll()
                 + AfflictionMirrors.RegisterAll()
+                + MonsterMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
@@ -66,6 +67,13 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 被换掉实现的敌人招式：求解器那张「怪物 + 招式 id」的大表不是注册表。
+            harmony.Patch(
+                MonsterMirrors.ResolveApplyTarget(),
+                prefix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.ApplyPrefix)));
+            harmony.Patch(
+                MonsterMirrors.ResolveReviveTarget(),
+                postfix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.RevivePostfix)));
             // 钻石冠冕和轰鸣海螺整个换了机制：先把它们从求解器的回合开始名单里摘掉。
             harmony.Patch(
                 RelicStatefulMirrors.ResolveParticipatingTarget(),

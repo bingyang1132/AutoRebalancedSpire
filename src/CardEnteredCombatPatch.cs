@@ -3,6 +3,7 @@ using HarmonyLib;
 using CombatSolver;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using RebalancedSpire.Core.Afflictions;
 using RebalancedSpire.Core.Powers;
 
@@ -36,13 +37,25 @@ internal static class CardEnteredCombatPatch
         if (card.Preview.Owner is not { } owner)
             return;
 
-        bool clear = card.Preview.Affliction switch
+        bool hunger = __instance.GetAmount<HungerPower>(owner.Creature) > 0;
+        bool scrutiny = __instance.GetAmount<ScrutinyPower>(owner.Creature) > 0;
+
+        switch (card.Preview.Affliction)
         {
-            Devoured => __instance.GetAmount<HungerPower>(owner.Creature) <= 0,
-            Weighted => __instance.GetAmount<ScrutinyPower>(owner.Creature) <= 0,
-            _ => false,
-        };
-        if (clear)
-            card.ClearAffliction();
+            // 源头没了，新进场的牌不该再带病症。
+            case Devoured when !hunger:
+            case Weighted when !scrutiny:
+                card.ClearAffliction();
+                return;
+            // 已经带着别的病症，两个源头都不会再覆盖。
+            case not null:
+                return;
+        }
+
+        // 源头还在，新进场的牌要被感染。饥饿不碰能力牌，审视来者不拒。
+        if (hunger && card.Preview.Type != CardType.Power)
+            simulator.Afflict<Devoured>(card, 1);
+        else if (scrutiny)
+            simulator.Afflict<Weighted>(card, 1);
     }
 }

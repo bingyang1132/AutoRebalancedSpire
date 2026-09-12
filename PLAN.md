@@ -60,8 +60,9 @@
   路线算成安全的）、**ToItsOriginOwner**（拜尔多尼斯专属，归怪物批）。
   连带做了 **SandsOfTimePower** 的额外回合：求解器只认遗物给的额外回合，Power 给的看不见，
   照 AutoWatcher 给腾跃写的那份补丁做。
-  `HungerPower` / `ScrutinyPower` 这两个源头 Power（施加病症、改关键字、改手牌上限、
-  源头死了就收回）归**怪物批**，它们属于寄生棱镜和幻影园丁。
+  `HungerPower` / `ScrutinyPower` 两个源头 Power：**牌进场时的感染已经做了**（饥饿不碰能力牌，
+  审视来者不拒），和上面的自我清除是同一个补丁的两面。还没做的是它们刚施加时把**已有的**牌
+  一次性感染（`AfterApplied`），以及审视的手牌上限修正（`IMaxHandSizeModifier`）。
 - [x] **1.4 状态牌 Wither**。求解器登记的是通用的「吃 Damage 点伤害」，用 0.2 那套换掉。
   改版：没带「凋零」病症时吃固定 6 点（新变量 `Fixed`，属性 Unpowered|Move）；带了病症则只有
   假升级层数不为 0 才吃 `Damage`（改版基数是 0，每层加 `PerLevel`=3）。按原版算会把一张会
@@ -113,11 +114,19 @@
 
 ## 阶段 9：怪物与遭遇
 
-- [ ] **9.1 出招表抽查**。44 张 `GenerateMoveStateMachine` 理论上自动跟随（求解器读的是怪物身上
+- [x] **9.1 出招表**（判定为不用做）。44 张 `GenerateMoveStateMachine` 理论上自动跟随（求解器读的是怪物身上
   活的那张表），但要实测抽查几个确认，特别是改了 `AfterAddedToRoom`（改血量/初始 Power）的那 22 个。
-- [ ] **9.2 被重写的单招**：`TheForgotten.MiasmaMove`、`TheInsatiable.LiquifyMove`、
-  `SlitheringStrangler.ConstrictMove`、`GasBomb.ExplodeMove`、`IllusionPower.ReviveMove`、
-  `SkittishPower.AfterAttack`、`KnowledgeDemon.ChooseCurse`。
+- [x] **9.2 被重写的单招**（差 `KnowledgeDemon.ChooseCurse` 一条）。求解器模拟敌人招式走
+  `MonsterMoveEffects.Apply` 里一张按「怪物类型名 + 招式 id」的大表，不是注册表，所以挂前缀：
+  - **缠绕**：3 层 → 2 层。
+  - **瘴气**：格挡从固定 8 改成 8 + 自己当前敏捷（在偷敏捷之后、给回之前读，顺序照原样）。
+  - **液化**：原版的流沙 4 和 6 张仓皇逃窜之外，多一层 5 的「长距离」。
+  - **自爆**：炸之前先摘掉「乒乓」，所以自爆不反伤生成它的迷雾；伤害那半求解器本来就对。
+  - **乒乓**（新 Power）：挂着它的怪被打死时反伤给生成者，伤害等于死者最大生命 ——
+    不镜像的话求解器看不到「先清小怪」这条收益。走 `AfterDeathMirrors` 登记。
+  - **惊惶**：改版除了起甲还给自己一层负力量。求解器登记过它，走 0.2 那套换掉。
+  - **幻影复活**：治满那半求解器本来就对，补的是「按幻灭层数给自己等量负力量」。
+  - 还差 `KnowledgeDemon.ChooseCurse`（选哪张诅咒进牌组）。
 - [ ] **9.3 新 Boss Doormaker**。连带 `AttackCommand.TargetingRandomOpponents` 的改写
   （只在场上有 Doormaker 时生效）和 `OmnidynamicsPower`。新怪物求解器完全不认识。
 - [ ] **9.4 新增卡牌**：CorpseExplosion、LimitBreak（连带 CorpseExplosionPower）。
