@@ -36,8 +36,11 @@
   风险** —— `src/AfterEnergyResetLateDispatch.cs` 挂 postfix 自己分发，上游哪天开成注册表
   就把这个文件换成登记。已有两个 Power 走通：SpinnerPlusPower、AfterlifePower。
   剩下 31 个跟着各自的角色批做。
-- [ ] **0.5 验收框架**。照 AutoWatcher 的做法搭 `tools/run-rebalanced-matrix.ps1`：
-  一张牌一条算术判据 + 反向对照。用户负责小规模实测，矩阵只用于回归。
+- [x] **0.5 验收框架**。`tools/run-rebalanced-matrix.ps1`，照 AutoWatcher 那份改的。
+  开跑前拦两件事：求解器构建产物和部署不一致（否则每条都会以「不兼容」挂掉，跑完一小时只
+  告诉你全没过）、`mods/` 里还有 Sts2RebalanceBeta（它和 RebalancedSpire 都换了燃料和辉光的
+  `OnPlay`，同时在场测出来的东西不算数）。
+  牌用**类型名**指称，harness 的模型解析除了 Id 也认类型名，省掉一层查证。
 
 ## 阶段 1：全局战斗规则（不分角色，任何一局都可能遇上）
 
@@ -150,7 +153,7 @@
    走 0.2 那套换掉）。**Bolas 不做**：它改的是 `BeforeHandDraw`，而求解器的
    `TriggerBeforeHandDraw` 只遍历 Power，**牌的这个钩子从来不分发** —— 原版 Bolas 在求解器里
    本来就没镜像，不是改动带来的新问题。要补得先在那一段里加上对牌的遍历，属于另一件事。
-3. **两张新牌**：CorpseExplosion、LimitBreak（连带 CorpseExplosionPower）。
+3. ~~两张新牌~~ —— CorpseExplosion、LimitBreak 已做（连带 CorpseExplosionPower）。
 4. **新 Boss Doormaker** 及其 `AttackCommand.TargetingRandomOpponents`、OmnidynamicsPower。
 5. `KnowledgeDemon.ChooseCurse`；饥饿 / 审视刚施加时的一次性感染和手牌上限修正。
 
