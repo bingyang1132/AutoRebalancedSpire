@@ -1,7 +1,10 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Enchantments;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using CombatSolver;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
@@ -106,5 +109,31 @@ internal static class Verbs
     {
         EngineDiagnostics.Warn($"[AutoRebalancedSpire] 未建模的结算内选择：{what}");
         context.History.RecordRisk(PredictionRiskReason.UnresolvedPlayerChoice);
+    }
+
+    // ---------- 造牌 ----------
+
+    /// <summary>造若干匕首进手牌，可选附魔与升级。</summary>
+    /// <remarks>
+    /// 对应原版 <c>Shiv.CreateInHand</c>。附魔走求解器的 <c>Enchant</c> 扩展，它内部会先判
+    /// <c>CanEnchant</c>，和原版 <c>CardCmd.Enchant</c> 一致。
+    /// </remarks>
+    public static void ShivsInHand(
+        CardOnPlayMirrorContext context,
+        int count,
+        EnchantmentModel? enchantment = null,
+        bool upgrade = false)
+    {
+        if (count <= 0)
+            return;
+        var added = context.Simulator
+            .CreateAndAddGeneratedCardsToCombat<Shiv>(Owner(context), PileType.Hand, count, Owner(context));
+        foreach (var result in added)
+        {
+            if (enchantment != null)
+                result.CardAdded.Enchant(enchantment.ToMutable(), 1m);
+            if (upgrade)
+                context.Simulator.Upgrade(result.CardAdded);
+        }
     }
 }

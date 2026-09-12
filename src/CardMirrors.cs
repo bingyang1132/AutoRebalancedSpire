@@ -1,9 +1,12 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
+using RebalancedSpire.Core.Enchantments;
 using CombatSolver.Engine.InCombat.Simulation;
 using CombatSolver;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using RebalancedSpire.Core.Configs;
@@ -173,6 +176,128 @@ internal static class CardMirrors
         V.Power(context, typeof(RetainHandPower), 1);
     }
 
+    // ---------- Silent ----------
+
+    /// <summary>手上功夫：加甲，然后给手里一张还没有「狡诈」的牌加上狡诈。</summary>
+    private static void HandTrick(HandTrick card, CardOnPlayMirrorContext context)
+    {
+        V.Block(context);
+        if (context.Simulator.HasPendingChoice)
+            return;
+        V.PlayerChoice(context, "手上功夫从手牌里挑一张加狡诈");
+    }
+
+    /// <summary>藏匿匕首：弃掉选中的几张，然后造若干带「充能」附魔的匕首进手牌。</summary>
+    /// <remarks>弃牌是玩家选的，求解器没开这个分支；造匕首这半是确定的，照常结算。</remarks>
+    private static void HiddenDaggers(HiddenDaggers card, CardOnPlayMirrorContext context)
+    {
+        V.PlayerChoice(context, "藏匿匕首要弃掉几张手牌");
+        V.ShivsInHand(context, V.VarInt(card, "Shivs"), CanonicalModels.Enchantment<Energetic>());
+    }
+
+    /// <summary>无尽之刃：上一层「无尽之刃+」，并把牌上的张数加进那层的张数变量。</summary>
+    /// <remarks>
+    /// 原版是一层一张匕首；改版把张数存在 Power 自己的 Cards 变量上，每打一次累加，
+    /// 所以必须取到刚施加的那一层再改它的变量 —— 只上层数会把张数丢掉。
+    /// </remarks>
+    private static void InfiniteBlades(InfiniteBlades card, CardOnPlayMirrorContext context)
+    {
+        V.Power(context, typeof(InfiniteBladesPlusPower), 1);
+        if (V.Combat(context).GetMutablePower<InfiniteBladesPlusPower>(V.Self(context)) is { } power)
+            power.DynamicVars.Cards.BaseValue += V.Var(card, "Cards");
+    }
+
+    /// <summary>神机妙算：上一层「神机妙算+」。</summary>
+    private static void MasterPlanner(MasterPlanner card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(MasterPlannerPlusPower), V.VarInt(card, "Cards"));
+
+    /// <summary>淬毒之刺：造若干带「剧毒」附魔的匕首进手牌，牌升级过则匕首也升级。</summary>
+    private static void PoisonedStab(PoisonedStab card, CardOnPlayMirrorContext context)
+        => V.ShivsInHand(
+            context,
+            V.VarInt(card, "Cards"),
+            CanonicalModels.Enchantment<Poisonous>(),
+            upgrade: card.IsUpgraded);
+
+    /// <summary>周密计划：上一层「周密计划+」。</summary>
+    private static void WellLaidPlans(WellLaidPlans card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(WellLaidPlansPlusPower), V.VarInt(card, "RetainAmount"));
+
+    // ---------- Defect ----------
+
+    /// <summary>吞噬暗影：上一层「吞噬暗影+」。</summary>
+    private static void ConsumingShadow(ConsumingShadow card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(ConsumingShadowPlusPower), V.VarInt(card, "ConsumingShadowPlusPower"));
+
+    /// <summary>玻璃工艺：加甲、充一颗玻璃球，然后给场上每颗玻璃球加被动值。</summary>
+    /// <remarks>
+    /// 那个被动值是球的私有字段 _passiveVal，原版就是直接改字段。分支里改的是球的克隆，
+    /// 不碰实机模型。
+    /// </remarks>
+    private static void Glasswork(Glasswork card, CardOnPlayMirrorContext context)
+    {
+        V.Block(context);
+        if (context.Simulator.HasPendingChoice)
+            return;
+        context.Simulator.OrbChannel<GlassOrb>(V.Owner(context));
+        if (context.Simulator.HasPendingChoice)
+            return;
+
+        decimal value = V.Var(card, "Value");
+        foreach (GlassOrb orb in context.Simulator.State
+                     .GetPlayerCombatState(V.Owner(context)).OrbQueue.Orbs.OfType<GlassOrb>())
+        {
+            orb._passiveVal += value;
+        }
+    }
+
+    /// <summary>腾跃：加甲，再上一层「腾跃」（临时聚焦）。</summary>
+    /// <remarks>
+    /// LeapPower 是临时 Power 模板，内部配一份等量的 FocusPower，回合结束一起收回。
+    /// 只上记账那一层的话，本回合的球被动会少算，回合结束还照收，下回合开局凭空多出一个负聚焦 ——
+    /// 这正是 AutoWatcher 在观者的「阳」上踩过的坑。
+    /// </remarks>
+    private static void Leap(Leap card, CardOnPlayMirrorContext context)
+    {
+        V.Block(context);
+        if (context.Simulator.HasPendingChoice)
+            return;
+        int focus = V.VarInt(card, "FocusPower");
+        V.Power(context, typeof(LeapPower), focus);
+        V.Power(context, typeof(FocusPower), focus);
+    }
+
+    /// <summary>折射：按 Repeat 次充能玻璃球。</summary>
+    private static void Refract(Refract card, CardOnPlayMirrorContext context)
+        => context.Simulator.OrbChannel<GlassOrb>(V.Owner(context), V.VarInt(card, "Repeat"));
+
+    /// <summary>碎裂：打全体，然后按球数逐个引爆；升级过的每颗引爆两次。</summary>
+    private static void Shatter(Shatter card, CardOnPlayMirrorContext context)
+    {
+        V.AttackAllEnemies(context);
+        if (context.Simulator.HasPendingChoice)
+            return;
+
+        int orbs = context.Simulator.State
+            .GetPlayerCombatState(V.Owner(context)).OrbQueue.Orbs.Count;
+        for (int i = 0; i < orbs; i++)
+        {
+            if (card.IsUpgraded)
+            {
+                context.Simulator.OrbEvokeNext(V.Owner(context), dequeue: false);
+                if (context.Simulator.HasPendingChoice)
+                    return;
+            }
+            context.Simulator.OrbEvokeNext(V.Owner(context));
+            if (context.Simulator.HasPendingChoice)
+                return;
+        }
+    }
+
+    /// <summary>同步：上一层「同步+」。</summary>
+    private static void Synchronize(Synchronize card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(SynchronizePlusPower), V.VarInt(card, "SynchronizePlusPower"));
+
     public static IEnumerable<MirroredCard> All()
     {
         yield return MirroredCard.For<Fuel>(
@@ -211,6 +336,46 @@ internal static class CardMirrors
         yield return MirroredCard.For<Salvo>(
             settings => settings.Salvo,
             registry => registry.Register<Salvo>(Salvo));
+        yield return MirroredCard.For<HandTrick>(
+            settings => settings.HandTrick,
+            registry => registry.Register<HandTrick>(HandTrick));
+        yield return MirroredCard.For<HiddenDaggers>(
+            settings => settings.HiddenDaggers,
+            registry => registry.Register<HiddenDaggers>(HiddenDaggers));
+        yield return MirroredCard.For<InfiniteBlades>(
+            settings => settings.InfiniteBlades,
+            registry => registry.Register<InfiniteBlades>(InfiniteBlades));
+        yield return MirroredCard.For<MasterPlanner>(
+            settings => settings.MasterPlanner,
+            registry => registry.Register<MasterPlanner>(MasterPlanner));
+        yield return MirroredCard.For<PoisonedStab>(
+            settings => settings.PoisonedStab,
+            registry => registry.Register<PoisonedStab>(PoisonedStab));
+        yield return MirroredCard.For<WellLaidPlans>(
+            settings => settings.WellLaidPlans,
+            registry => registry.Register<WellLaidPlans>(WellLaidPlans));
+        yield return MirroredCard.For<ConsumingShadow>(
+            settings => settings.ConsumingShadow,
+            registry => registry.Register<ConsumingShadow>(ConsumingShadow),
+            replacesBuiltIn: true);
+        yield return MirroredCard.For<Glasswork>(
+            settings => settings.Glasswork,
+            registry => registry.Register<Glasswork>(Glasswork),
+            replacesBuiltIn: true);
+        yield return MirroredCard.For<Leap>(
+            settings => settings.Leap,
+            registry => registry.Register<Leap>(Leap));
+        yield return MirroredCard.For<Refract>(
+            settings => settings.Refract,
+            registry => registry.Register<Refract>(Refract),
+            replacesBuiltIn: true);
+        yield return MirroredCard.For<Shatter>(
+            settings => settings.Shatter,
+            registry => registry.Register<Shatter>(Shatter),
+            replacesBuiltIn: true);
+        yield return MirroredCard.For<Synchronize>(
+            settings => settings.Synchronize,
+            registry => registry.Register<Synchronize>(Synchronize));
         yield return MirroredCard.For<Spinner>(
             settings => settings.Spinner,
             registry => registry.Register<Spinner>(Spinner),
