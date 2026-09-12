@@ -13,6 +13,7 @@ using RebalancedSpire.Core.Afflictions;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Attack;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Death;
 using CombatSolver.Engine.InCombat.Simulation;
@@ -144,6 +145,44 @@ internal static class MonsterMirrors
                 simulator.AddToCombat<FranticEscape>(player, PileType.Discard, 3, null, CardPilePosition.Random);
                 __result = true;
                 return false;
+
+            // 猛击：原版 3 力量；改版 2。
+            case ("LivingShield", "SMASH_MOVE") when settings.TurretOperator:
+                combat.Apply<StrengthPower>(owner, 2, owner);
+                __result = true;
+                return false;
+
+            // 充能：改版固定 2 力量（原版读怪物自己的静态值）。
+            case ("Rocket", "CHARGE_UP_MOVE") when settings.KaiserCrab:
+                combat.Apply<StrengthPower>(owner, 2, owner);
+                __result = true;
+                return false;
+
+            // 践踏：原版虚弱 1 之外还给自己 3 层蒸汽；改版只剩虚弱 1。
+            case ("WaterfallGiant", "STOMP_MOVE") when settings.WaterfallGiant:
+                combat.ApplyFromMonster<WeakPower>(player, 1, owner);
+                __result = true;
+                return false;
+
+            // 加压：蒸汽从 3 层提到 9 层。
+            case ("WaterfallGiant", "PRESSURE_UP_MOVE") when settings.WaterfallGiant:
+                combat.Apply<SteamEruptionPower>(owner, 9, owner);
+                __result = true;
+                return false;
+
+            // 渐强：原版是「把手上的枯萎升一级再塞几张新的」，改版把那套挪到了凋零那一招，
+            // 这一招换成给自己力量和 33 点格挡。
+            case ("Aeonglass", "INCREASING_INTENSITY_MOVE") when settings.Aeonglass:
+            {
+                int intensity = TryStatic(combat, owner, "IncreasingIntensityTotalStrength");
+                if (intensity > 0)
+                    combat.Apply<StrengthPower>(owner, intensity, owner);
+                if (simulator.HasPendingChoice)
+                    return false;
+                simulator.GainBlock(owner, 33, ValueProp.Move);
+                __result = true;
+                return false;
+            }
 
             // 咒缚：原版 2 层诅咒；改版每个目标 1 层，外加自己一层虚无。
             case ("SpectralKnight", "HEX_MOVE") when settings.Knights:
@@ -286,6 +325,24 @@ internal static class MonsterMirrors
 
             default:
                 return true;
+        }
+    }
+
+    /// <summary>读怪物身上一个静态数值，读不到就返回 0 并记一条风险。</summary>
+    /// <remarks>
+    /// 求解器只捕获它自己用得上的那些静态值。改版新引用的字段不一定在里面，读不到时宁可
+    /// 少算一份加成并显示成红字，也不要把整条搜索抛断。
+    /// </remarks>
+    private static int TryStatic(SimulatedCombatState combat, Creature owner, string name)
+    {
+        try
+        {
+            return combat.GetMonsterStaticInt(owner, name);
+        }
+        catch (InvalidOperationException)
+        {
+            EngineDiagnostics.Warn($"[AutoRebalancedSpire] 读不到怪物静态值 {name}，这一份加成没算。");
+            return 0;
         }
     }
 

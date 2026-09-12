@@ -1,4 +1,2 @@
 
-17:56:55 开始 共 1 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
-17:57:45 [1/1] RS-UNTOUCHABLE-REPEAT-BLOCK 通过
-17:57:45 结束 通过 1/1 未通过 0 未运行 0
+18:00:20 开始 共 8 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
