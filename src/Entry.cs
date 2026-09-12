@@ -44,6 +44,7 @@ public static class Entry
             registeredOther = EnchantmentMirrors.RegisterAll()
                 + AfflictionMirrors.RegisterAll()
                 + MonsterMirrors.RegisterAll()
+                + OrbPowerMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
