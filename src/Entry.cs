@@ -45,6 +45,7 @@ public static class Entry
                 + AfflictionMirrors.RegisterAll()
                 + MonsterMirrors.RegisterAll()
                 + OrbPowerMirrors.RegisterAll()
+                + NewCardMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
