@@ -37,14 +37,14 @@ internal static class CardEnteredCombatPatch
         if (card.Preview.Owner is not { } owner)
             return;
 
-        bool hunger = __instance.GetAmount<HungerPower>(owner.Creature) > 0;
-        bool scrutiny = __instance.GetAmount<ScrutinyPower>(owner.Creature) > 0;
+        int hunger = __instance.GetAmount<HungerPower>(owner.Creature);
+        int scrutiny = __instance.GetAmount<ScrutinyPower>(owner.Creature);
 
         switch (card.Preview.Affliction)
         {
             // 源头没了，新进场的牌不该再带病症。
-            case Devoured when !hunger:
-            case Weighted when !scrutiny:
+            case Devoured when hunger <= 0:
+            case Weighted when scrutiny <= 0:
                 card.ClearAffliction();
                 return;
             // 已经带着别的病症，两个源头都不会再覆盖。
@@ -53,9 +53,9 @@ internal static class CardEnteredCombatPatch
         }
 
         // 源头还在，新进场的牌要被感染。饥饿不碰能力牌，审视来者不拒。
-        if (hunger && card.Preview.Type != CardType.Power)
-            simulator.Afflict<Devoured>(card, 1);
-        else if (scrutiny)
-            simulator.Afflict<Weighted>(card, 1);
+        if (hunger > 0 && card.Preview.Type != CardType.Power)
+            simulator.Afflict<Devoured>(card, hunger);
+        else if (scrutiny > 0)
+            simulator.Afflict<Weighted>(card, scrutiny);
     }
 }

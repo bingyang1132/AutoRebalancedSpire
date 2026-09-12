@@ -44,33 +44,69 @@ internal static class PowerMirrors
         => AccessTools.Method(typeof(TurnStartPowerSupport), HandDrawName)
            ?? throw new MissingMethodException(nameof(TurnStartPowerSupport), HandDrawName);
 
-    /// <summary>发牌之前：无尽之刃+ 造匕首。</summary>
+    /// <summary>发牌之前：无尽之刃+ 造匕首，必然结局+ 挑几张牌放到牌堆顶。</summary>
     /// <remarks>
     /// 求解器这个时点是 <c>TurnStartPowerSupport.TriggerBeforeHandDraw</c> 里一段按类型写死的
-    /// 流程，第三方 Power 进不去，只能挂在它后面。
+    /// 流程，第三方 Power 进不去，也**不记未镜像风险**（<c>BeforeHandDraw</c> 根本没有镜像注册表，
+    /// 风险只在注册表那条路上才记），所以不补就是静默算错，只能挂在它后面。
     ///
-    /// 必然结局+ 的那一半（从抽牌堆挑几张放到牌堆顶）没做：那是一次玩家选择，而且改的是抽牌
-    /// 顺序，求解器要为它开一条选择分支才谈得上镜像。没做的部分会以未镜像风险显示成红字。
+    /// 返回值要跟着改：这个方法的 <c>bool</c> 是「有没有产生待处理选择」，调用方拿它当搜索边界。
+    /// 我们这一段一旦挂起选择却不回写 <c>__result</c>，后面的遗物、噩梦结算都会带着未决选择继续跑。
     /// </remarks>
     public static void HandDrawPostfix(
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
-        Player player)
+        Player player,
+        TurnStartChoiceCursor choices,
+        ref bool __result)
     {
-        if (simulator.HasPendingChoice)
+        if (__result || combat.HasPendingChoice)
             return;
 
         foreach (PowerModel power in combat.EffectivePowers().ToArray())
         {
             if (power.Amount <= 0 || !ReferenceEquals(power.Owner.Player, player))
                 continue;
-            if (power is not InfiniteBladesPlusPower blades)
-                continue;
 
-            simulator.CreateAndAddGeneratedCardsToCombat<Shiv>(
-                player, PileType.Hand, blades.Amount, player);
-            if (simulator.HasPendingChoice)
+            switch (power)
+            {
+                case InfiniteBladesPlusPower blades:
+                    simulator.CreateAndAddGeneratedCardsToCombat<Shiv>(
+                        player, PileType.Hand, blades.Amount, player);
+                    break;
+
+                // 必然结局+：洗牌（如有必要）之后从抽牌堆挑 Amount 张放到牌堆顶。和原版的差别有两处：
+                // 原版是挑完进手牌并把自己移除，改版是挑完放牌堆顶、自己留着，每回合都来一次。
+                case ForegoneConclusionPlusPower:
+                {
+                    SimPlayerCombatState state = simulator.State.GetPlayerCombatState(player);
+                    if (state.DrawPile.IsEmpty && !state.DiscardPile.IsEmpty)
+                    {
+                        simulator.Shuffle(player);
+                        if (combat.HasPendingChoice)
+                        {
+                            __result = true;
+                            return;
+                        }
+                    }
+                    if (!TurnChoiceMirrors.ResolveMoveToDrawTop(
+                            simulator, combat, player, choices, power.Id.Entry, power.Amount))
+                    {
+                        __result = true;
+                        return;
+                    }
+                    break;
+                }
+
+                default:
+                    continue;
+            }
+
+            if (combat.HasPendingChoice)
+            {
+                __result = true;
                 return;
+            }
         }
     }
 

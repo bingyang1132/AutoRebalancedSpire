@@ -86,6 +86,11 @@ public static class Entry
             harmony.Patch(
                 PowerMirrors.ResolveHandDrawTarget(),
                 postfix: new HarmonyMethod(typeof(PowerMirrors), nameof(PowerMirrors.HandDrawPostfix)));
+            // 周密计划+ 换成了「回合结束挑几张保留」，求解器整个 BeforeFlush 时点都没有。
+            harmony.Patch(
+                TurnEndRetainPatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(TurnEndRetainPatch), nameof(TurnEndRetainPatch.Postfix)));
             harmony.Patch(
                 MonsterMirrors.ResolveReviveTarget(),
                 postfix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.RevivePostfix)));
@@ -123,6 +128,16 @@ public static class Entry
                 RelicMirrors.ResolveGeneratedToHandTarget(),
                 prefix: new HarmonyMethod(
                     typeof(RelicMirrors), nameof(RelicMirrors.ResolveGeneratedToHandPrefix)));
+            // 侧回合结束：饥饿/审视的衰减、死神形态+ 提前收割末日。
+            harmony.Patch(
+                SideTurnEndDispatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(SideTurnEndDispatch), nameof(SideTurnEndDispatch.Postfix)));
+            // 饥饿/审视施加与消失时，对已经在场的牌整批感染、整批清除。
+            harmony.Patch(
+                PowerAfflictionPatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(PowerAfflictionPatch), nameof(PowerAfflictionPatch.Postfix)));
             // 牌进场时两个新病症要自查源头 Power 还在不在，求解器那个时点也是写死的 switch。
             harmony.Patch(
                 CardEnteredCombatPatch.ResolveTarget(),
@@ -138,6 +153,15 @@ public static class Entry
             harmony.Patch(
                 ExtraTurnPatch.ResolveConsumeTarget(),
                 postfix: new HarmonyMethod(typeof(ExtraTurnPatch), nameof(ExtraTurnPatch.ConsumePostfix)));
+            // 手牌上限求解器建根时冻结；改版有两个会在战斗中变的来源。
+            harmony.Patch(
+                MaxHandSizePatch.ResolveCaptureTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(MaxHandSizePatch), nameof(MaxHandSizePatch.CapturePostfix)));
+            harmony.Patch(
+                MaxHandSizePatch.ResolveMaxHandSizeTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(MaxHandSizePatch), nameof(MaxHandSizePatch.MaxHandSizePostfix)));
             // 回合开始晚段求解器只跑一个遗物，Power 一个都不发，只能挂在它后面自己分发。
             harmony.Patch(
                 AfterEnergyResetLateDispatch.ResolveTarget(),
