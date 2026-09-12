@@ -54,6 +54,15 @@ public static class Entry
             harmony.Patch(
                 AuditFilter.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(AuditFilter), nameof(AuditFilter.Prefix)));
+            // 求解器算计算变量时用的是它自己那张写死的乘数表，改版换了公式的牌要接管。
+            harmony.Patch(
+                CalculatedVarPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(typeof(CalculatedVarPatch), nameof(CalculatedVarPatch.Prefix)));
+            // 回合开始晚段求解器只跑一个遗物，Power 一个都不发，只能挂在它后面自己分发。
+            harmony.Patch(
+                AfterEnergyResetLateDispatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(AfterEnergyResetLateDispatch), nameof(AfterEnergyResetLateDispatch.Postfix)));
         }
         catch (Exception ex)
         {
@@ -61,6 +70,7 @@ public static class Entry
             return;
         }
 
-        _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌、{registeredPowers} 个新 Power 的镜像。{check.Detail}");
+        _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌、"
+            + $"{registeredPowers + AfterEnergyResetLateDispatch.HandlerCount} 个新 Power 的镜像。{check.Detail}");
     }
 }

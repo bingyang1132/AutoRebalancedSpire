@@ -23,13 +23,19 @@
   摘不摘得到和 `MirroredCard.ReplacesBuiltIn` 对不上就抛 —— 上游动了镜像表就要重新核对。
   自检里加了一条字段探针，上游改字段名会变成加载时的干净失败。
   已用 **Spinner** 实跑验证：无头日志里自检通过、6 张牌 + 1 个 Power 登记成功。
-- [ ] **0.3 计算变量公式**。`CalculatedVarSpecRegistry` 把每张计算牌的乘数写死在 internal switch 里，
-  没有第三方入口。**ExpectAFight**（原版乘数=力量 → 改成弃牌堆里攻击牌张数）、
-  **Synchronize** 两张受影响。光镜像 `OnPlay` 不够，别处读这个变量的地方仍按原版公式算。
-- [ ] **0.4 新 Power 的钩子镜像地基**。RebalancedSpire 新增 33 个 Power，共重写 22 种钩子。
-  逐个登记进求解器对应的 `XxxMirrors.Registry`。其中 `AfterlifePower` 重写的
-  `AfterEnergyResetLate` **求解器只对一个遗物分发、Power 一个不发也不记风险** ——
-  和 PR #88 修的是同一类毛病，要么上游开注册表，要么本地打补丁补。
+- [x] **0.3 计算变量公式**。`CalculatedVarSpecRegistry` 把每张计算牌的乘数写死在 internal switch 里，
+  没有第三方入口。`src/CalculatedVarPatch.cs` 用前缀接管我们认得的牌，其余放行原实现。
+  受影响的**只有 ExpectAFight 一张**：原版乘数是力量，改版换成**手牌里攻击牌的张数**
+  （`PileType.Hand` = 2、`CardType.Attack` = 1，枚举顺序核过）。
+  Synchronize 原本也在那张表里，但改版把它的 `CalculatedVar` 整个从 CanonicalVars 里去掉了
+  （换成普通 PowerVar），所以不用管 —— 这是读代码才发现的，先前按名字判断会多做一张。
+  顺带把 ExpectAFight 的牌镜像也做了（走求解器自己的计算通道，保证和估值那边读到同一个数）。
+- [x] **0.4 新 Power 的钩子镜像地基**。RebalancedSpire 新增 33 个 Power，共重写 22 种钩子。
+  走注册表的那些直接登记（`src/PowerMirrors.cs`）。缺口补完了一个：
+  `AfterEnergyResetLate` 求解器只跑一个遗物（`BoundPhylactery`），**Power 一个都不发也不记
+  风险** —— `src/AfterEnergyResetLateDispatch.cs` 挂 postfix 自己分发，上游哪天开成注册表
+  就把这个文件换成登记。已有两个 Power 走通：SpinnerPlusPower、AfterlifePower。
+  剩下 31 个跟着各自的角色批做。
 - [ ] **0.5 验收框架**。照 AutoWatcher 的做法搭 `tools/run-rebalanced-matrix.ps1`：
   一张牌一条算术判据 + 反向对照。用户负责小规模实测，矩阵只用于回归。
 
@@ -97,6 +103,8 @@
 
 ## 进度
 
-- 2026-09-12 立项。阶段 0.1、0.2 完成。已镜像 6 张牌：
-  **Fuel、Untouchable、Glow、UpMySleeve、NeutronAegis、Spinner**（Spinner 属于 Defect 批，
-  提前做是为了验证 0.2 的改写机制）；1 个新 Power：**SpinnerPlusPower**。
+- 2026-09-12 立项。阶段 0.1、0.2、0.3、0.4 完成，只剩 0.5 验收框架。
+  已镜像 7 张牌：**Fuel、Untouchable、Glow、UpMySleeve、NeutronAegis、Spinner、ExpectAFight**
+  （后两张属于 Defect / Ironclad 批，提前做是为了验证 0.2 和 0.3 的机制）；
+  2 个新 Power：**SpinnerPlusPower、AfterlifePower**。
+  无头实跑确认三个补丁都挂上了、自检通过、零报错。

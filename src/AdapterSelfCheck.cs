@@ -43,6 +43,16 @@ internal static class AdapterSelfCheck
 
         try
         {
+            _ = CalculatedVarPatch.ResolveTarget();
+            _ = AfterEnergyResetLateDispatch.ResolveTarget();
+        }
+        catch (MissingMethodException ex)
+        {
+            return new Result(false, $"求解器的内部方法找不到了：{ex.Message}。换了求解器版本要重新核对。");
+        }
+
+        try
+        {
             _ = RebalancedSpireSettingsStore.Settings;
         }
         catch (Exception ex)

@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.InCombat.Simulation;
+using CombatSolver.Engine.InCombat.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using RebalancedSpire.Core.Configs;
 using RebalancedSpire.Core.Powers;
@@ -94,6 +95,17 @@ internal static class CardMirrors
     private static void Spinner(Spinner card, CardOnPlayMirrorContext context)
         => V.Power(context, typeof(SpinnerPlusPower), V.VarInt(card, "SpinnerPlusPower"));
 
+    /// <summary>严阵以待：按手牌里攻击牌的张数给能量。</summary>
+    /// <remarks>
+    /// 原版是按力量给；改版把乘数换成手牌里的攻击牌张数（基数 0、每张 1 点），费用 2，
+    /// 升级 −1 费。乘数不是在这里现算的，而是走求解器自己的计算变量通道 ——
+    /// <see cref="CalculatedVarPatch" /> 已经把那张写死的乘数表接管了，所以这里和别处
+    /// （估值、牌面预览）读到的一定是同一个数，不会各算各的。
+    /// </remarks>
+    private static void ExpectAFight(ExpectAFight card, CardOnPlayMirrorContext context)
+        => V.GainEnergy(context, V.RequireVar(card, "CalculatedEnergy")
+            .InvokeCalculate(context.Simulator, context.Card, context.CardPlay.Target));
+
     public static IEnumerable<MirroredCard> All()
     {
         yield return MirroredCard.For<Fuel>(
@@ -111,6 +123,9 @@ internal static class CardMirrors
         yield return MirroredCard.For<NeutronAegis>(
             settings => settings.NeutronAegis,
             registry => registry.Register<NeutronAegis>(NeutronAegis));
+        yield return MirroredCard.For<ExpectAFight>(
+            settings => settings.ExpectAFight,
+            registry => registry.Register<ExpectAFight>(ExpectAFight));
         yield return MirroredCard.For<Spinner>(
             settings => settings.Spinner,
             registry => registry.Register<Spinner>(Spinner),
