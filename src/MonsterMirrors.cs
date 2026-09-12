@@ -141,6 +141,17 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
+            // 辐射：改版只剩攻击，原版那份加甲没了。
+            case ("InfestedPrism", "RADIATE_MOVE") when settings.InfestedPrism:
+                __result = true;
+                return false;
+
+            // 脉动：改版给自己 4 点力量，原版是加甲 + 生命火花。
+            case ("InfestedPrism", "PULSATE_MOVE") when settings.InfestedPrism:
+                combat.Apply<StrengthPower>(owner, 4, owner);
+                __result = true;
+                return false;
+
             // 自爆：炸之前先把「乒乓」摘掉，所以自爆不会反伤生成它的迷雾。
             // 摘完仍然放行原实现 —— 伤害和「炸完自己也没了」求解器本来就算对。
             case ("GasBomb", "EXPLODE_MOVE") when settings.LivingFog:
