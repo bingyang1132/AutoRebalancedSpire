@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
+using CombatSolver.Engine.InCombat.Simulation;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using RebalancedSpire.Core.Configs;
 using V = AutoRebalancedSpire.Verbs;
@@ -44,6 +46,42 @@ internal static class CardMirrors
             V.Block(context);
     }
 
+    /// <summary>光辉：给星，然后抽牌。</summary>
+    /// <remarks>
+    /// 和原版的差别不在数值上 —— 原版打完还会上一层 <c>DrawCardsNextTurnPower</c>（下回合多抽
+    /// 同样张数），改版**把那一层去掉了**，只留当场的星和抽牌，抽牌基数从 1 提到 2。
+    /// 少镜像掉的正是那一层，所以这里只有两句。
+    /// </remarks>
+    private static void Glow(Glow card, CardOnPlayMirrorContext context)
+    {
+        V.GainStars(context, V.Var(card, "Stars"));
+        V.Draw(context, V.VarInt(card, "Cards"));
+    }
+
+    /// <summary>袖里乾坤：造 Cards 张匕首进手牌。</summary>
+    /// <remarks>
+    /// 原版每打出一次还会 <c>EnergyCost.AddThisCombat(-1)</c>，本场越打越便宜；改版**去掉了
+    /// 这条**，只留造匕首（费用改成常驻 2、加保留关键字，那些是数据层，求解器自动跟随）。
+    /// 漏掉这一点的后果是求解器以为第二张便宜 1 点，整条连打路线的费用都算错。
+    /// </remarks>
+    private static void UpMySleeve(UpMySleeve card, CardOnPlayMirrorContext context)
+        => context.Simulator.CreateAndAddGeneratedCardsToCombat<Shiv>(
+            card.Owner, PileType.Hand, V.VarInt(card, "Cards"), card.Owner);
+
+    /// <summary>中子护盾：按花掉的星给镀甲，花够 Stars 颗则翻倍。</summary>
+    /// <remarks>
+    /// 原版是固定 1 费给一个定值镀甲；改版把它变成了**星 X 牌**（<c>HasStarCostX</c> 真、
+    /// 能量费 0、Stars 基数 5，升级 −1），镀甲点数就是花掉的星数，花到 Stars 及以上再翻倍。
+    /// 「≥」不是「>」，照它写的来。
+    /// </remarks>
+    private static void NeutronAegis(NeutronAegis card, CardOnPlayMirrorContext context)
+    {
+        int stars = context.Card.ResolveStarXValue(context.State);
+        if (stars >= V.VarInt(card, "Stars"))
+            stars *= 2;
+        V.Power(context, typeof(PlatingPower), stars);
+    }
+
     public static IEnumerable<MirroredCard> All()
     {
         yield return MirroredCard.For<Fuel>(
@@ -52,5 +90,14 @@ internal static class CardMirrors
         yield return MirroredCard.For<Untouchable>(
             settings => settings.Untouchable,
             registry => registry.Register<Untouchable>(Untouchable));
+        yield return MirroredCard.For<Glow>(
+            settings => settings.Glow,
+            registry => registry.Register<Glow>(Glow));
+        yield return MirroredCard.For<UpMySleeve>(
+            settings => settings.UpMySleeve,
+            registry => registry.Register<UpMySleeve>(UpMySleeve));
+        yield return MirroredCard.For<NeutronAegis>(
+            settings => settings.NeutronAegis,
+            registry => registry.Register<NeutronAegis>(NeutronAegis));
     }
 }

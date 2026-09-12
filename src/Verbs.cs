@@ -66,6 +66,12 @@ internal static class Verbs
             context.Simulator.GainEnergy(Owner(context), amount);
     }
 
+    public static void GainStars(CardOnPlayMirrorContext context, decimal amount)
+    {
+        if (amount > 0)
+            context.Simulator.GainStars(Owner(context), amount);
+    }
+
     // ---------- Power ----------
 
     /// <summary>施加任意 PowerModel，包括 RebalancedSpire 自己新加的那 33 个。</summary>

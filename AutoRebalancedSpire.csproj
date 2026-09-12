@@ -21,10 +21,11 @@
     <WorkshopDir Condition="'$(WorkshopDir)' == ''">$(SteamRoot)/steamapps/workshop/content/2868840</WorkshopDir>
     <RitsuLibDir Condition="'$(RitsuLibDir)' == ''">$(WorkshopDir)/3747602295/lib/0.111.0</RitsuLibDir>
 
-    <!-- 钉死的依赖。求解器从游戏 mods 目录读，RebalancedSpire 从 workshop 目录读，
-         都不把别人的二进制放进本仓库。 -->
+    <!-- 钉死的依赖。两者都从游戏 mods 目录读，不把别人的二进制放进本仓库。
+         RebalancedSpire 原本在 workshop 目录（3747498062），已整份拷进 mods/ 钉住版本：
+         工坊那边随时会更新，而这份适配是逐张牌对着某一个构建核出来的。 -->
     <CombatSolverDir Condition="'$(CombatSolverDir)' == ''">$(Sts2Dir)/mods/CombatSolver</CombatSolverDir>
-    <RebalancedSpireDir Condition="'$(RebalancedSpireDir)' == ''">$(WorkshopDir)/3747498062</RebalancedSpireDir>
+    <RebalancedSpireDir Condition="'$(RebalancedSpireDir)' == ''">$(Sts2Dir)/mods/RebalancedSpire</RebalancedSpireDir>
 
     <ModOutputDir>$(Sts2Dir)/mods/AutoRebalancedSpire</ModOutputDir>
     <CopyModOnBuild Condition="'$(CopyModOnBuild)' == ''">true</CopyModOnBuild>
@@ -52,7 +53,7 @@
     <Error Condition="!Exists('$(Sts2DataDir)/sts2.dll')" Text="找不到 $(Sts2DataDir)/sts2.dll。请检查 SteamRoot 或 local.props。" />
     <Error Condition="!Exists('$(RitsuLibDir)/STS2-RitsuLib.dll')" Text="找不到当前游戏版本的 RitsuLib。请检查 SteamRoot 或 local.props。" />
     <Error Condition="!Exists('$(CombatSolverDir)/CombatSolver.dll')" Text="找不到 $(CombatSolverDir)/CombatSolver.dll。请先构建并部署 CombatSolver。" />
-    <Error Condition="!Exists('$(RebalancedSpireDir)/RebalancedSpire.dll')" Text="找不到 $(RebalancedSpireDir)/RebalancedSpire.dll。请在 Steam 里订阅 RebalancedSpire（Workshop 3747498062）。" />
+    <Error Condition="!Exists('$(RebalancedSpireDir)/RebalancedSpire.dll')" Text="找不到 $(RebalancedSpireDir)/RebalancedSpire.dll。请把 RebalancedSpire 整份拷进游戏 mods 目录（原始出处是 Workshop 3747498062）。" />
   </Target>
 
   <!--
