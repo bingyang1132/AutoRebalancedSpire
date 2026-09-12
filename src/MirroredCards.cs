@@ -6,16 +6,22 @@ using RebalancedSpire.Core.Configs;
 namespace AutoRebalancedSpire;
 
 /// <summary>一张被镜像的牌：牌的类型、它在 RebalancedSpire 设置里的开关、以及怎么登记。</summary>
+/// <param name="ReplacesBuiltIn">
+/// 求解器自己是不是也给这张牌登记了 bespoke 镜像。是的话要先摘掉再登记。
+/// 这个值和实际情况对不上就是自检失败：说明上游动了它的镜像表，我们对着的前提变了。
+/// </param>
 internal sealed record MirroredCard(
     Type CardType,
     Func<RebalancedSpireSettings, bool> Toggle,
-    Action<MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>> Register)
+    Action<MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>> Register,
+    bool ReplacesBuiltIn = false)
 {
     public static MirroredCard For<TCard>(
         Func<RebalancedSpireSettings, bool> toggle,
-        Action<MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>> register)
+        Action<MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>> register,
+        bool replacesBuiltIn = false)
         where TCard : CardModel
-        => new(typeof(TCard), toggle, register);
+        => new(typeof(TCard), toggle, register, replacesBuiltIn);
 }
 
 /// <summary>
@@ -46,6 +52,12 @@ internal static class MirroredCards
         {
             if (!card.Toggle(settings))
                 continue;
+            bool dropped = RegistryOverride.DropRegistration(registry, card.CardType);
+            if (dropped != card.ReplacesBuiltIn)
+                throw new InvalidOperationException(
+                    $"{card.CardType.Name}：求解器"
+                    + (dropped ? "登记了" : "没有登记")
+                    + "自己的 OnPlay 镜像，和本适配层记的相反。上游的镜像表变了，要重新核对。");
             card.Register(registry);
             Active.Add(card);
         }

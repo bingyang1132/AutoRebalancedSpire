@@ -15,9 +15,14 @@
 - [x] **0.1 放行入口**。求解器建根审牌组，任何一张牌 `OnPlay` 上有第三方补丁就拒整场战斗，
   而它没有第三方放行入口。适配层打补丁把**已镜像**的牌摘出待审名单。
   规矩：放行名单 = 镜像名单（`src/MirroredCards.cs`）。
-- [ ] **0.2 改写求解器已登记的牌**。`MethodMirrorRegistry.Register` 用 `Dictionary.Add`，
+- [x] **0.2 改写求解器已登记的牌**。`MethodMirrorRegistry.Register` 用 `Dictionary.Add`，
   同一类型登记第二次直接抛。这 33 张里有 5 张求解器自己已经登记了 bespoke 镜像：
   **ConsumingShadow、Glasswork、Refract、Shatter、Spinner**。不解决这条，整个 Defect 批做不了。
+  做法：`src/RegistryOverride.cs` 全程反射摘掉已有登记再登记自己的（注册表内部那个
+  `LookupResult` 是私有嵌套类型，在这边连名字都写不出来，只能走非泛型 `IDictionary`）。
+  摘不摘得到和 `MirroredCard.ReplacesBuiltIn` 对不上就抛 —— 上游动了镜像表就要重新核对。
+  自检里加了一条字段探针，上游改字段名会变成加载时的干净失败。
+  已用 **Spinner** 实跑验证：无头日志里自检通过、6 张牌 + 1 个 Power 登记成功。
 - [ ] **0.3 计算变量公式**。`CalculatedVarSpecRegistry` 把每张计算牌的乘数写死在 internal switch 里，
   没有第三方入口。**ExpectAFight**（原版乘数=力量 → 改成弃牌堆里攻击牌张数）、
   **Synchronize** 两张受影响。光镜像 `OnPlay` 不够，别处读这个变量的地方仍按原版公式算。
@@ -92,5 +97,6 @@
 
 ## 进度
 
-- 2026-09-12 立项。阶段 0.1 完成；已镜像 5 张牌：
-  **Fuel、Untouchable、Glow、UpMySleeve、NeutronAegis**。
+- 2026-09-12 立项。阶段 0.1、0.2 完成。已镜像 6 张牌：
+  **Fuel、Untouchable、Glow、UpMySleeve、NeutronAegis、Spinner**（Spinner 属于 Defect 批，
+  提前做是为了验证 0.2 的改写机制）；1 个新 Power：**SpinnerPlusPower**。

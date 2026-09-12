@@ -34,10 +34,12 @@ public static class Entry
         }
 
         int registered;
+        int registeredPowers;
         try
         {
             MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> onPlay = CardOnPlayMirrors.Registry;
             registered = MirroredCards.RegisterAll(onPlay);
+            registeredPowers = PowerMirrors.RegisterAll();
         }
         catch (Exception ex)
         {
@@ -59,6 +61,6 @@ public static class Entry
             return;
         }
 
-        _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌的镜像。{check.Detail}");
+        _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌、{registeredPowers} 个新 Power 的镜像。{check.Detail}");
     }
 }

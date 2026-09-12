@@ -50,6 +50,10 @@ internal static class AdapterSelfCheck
             return new Result(false, $"读不到 RebalancedSpire 的设置：{ex.Message}。");
         }
 
+        if (RegistryOverride.Probe(CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay.CardOnPlayMirrors.Registry)
+            is { } probeError)
+            return new Result(false, probeError);
+
         if (ValidateMirroredCards() is { } cardError)
             return new Result(false, cardError);
 

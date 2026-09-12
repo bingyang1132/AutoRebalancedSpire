@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.InCombat.Simulation;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using RebalancedSpire.Core.Configs;
+using RebalancedSpire.Core.Powers;
 using V = AutoRebalancedSpire.Verbs;
 
 namespace AutoRebalancedSpire;
@@ -82,6 +83,17 @@ internal static class CardMirrors
         V.Power(context, typeof(PlatingPower), stars);
     }
 
+    /// <summary>纺纱：上一层「纺纱+」。</summary>
+    /// <remarks>
+    /// 原版是「升级过的话先充一颗玻璃球，再上 <c>SpinnerPower</c>」；改版费用 1 → 2，
+    /// 去掉了升级那颗球，上的换成 <c>SpinnerPlusPower</c>（每回合充能之后还会把场上所有玻璃球
+    /// 各触发一次被动，见 <see cref="PowerMirrors" />）。
+    ///
+    /// 这是求解器自己也登记了 bespoke 镜像的五张之一，登记前要先摘掉它那条。
+    /// </remarks>
+    private static void Spinner(Spinner card, CardOnPlayMirrorContext context)
+        => V.Power(context, typeof(SpinnerPlusPower), V.VarInt(card, "SpinnerPlusPower"));
+
     public static IEnumerable<MirroredCard> All()
     {
         yield return MirroredCard.For<Fuel>(
@@ -99,5 +111,9 @@ internal static class CardMirrors
         yield return MirroredCard.For<NeutronAegis>(
             settings => settings.NeutronAegis,
             registry => registry.Register<NeutronAegis>(NeutronAegis));
+        yield return MirroredCard.For<Spinner>(
+            settings => settings.Spinner,
+            registry => registry.Register<Spinner>(Spinner),
+            replacesBuiltIn: true);
     }
 }
