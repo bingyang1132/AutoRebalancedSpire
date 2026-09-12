@@ -72,6 +72,9 @@ public static class Entry
                 MonsterMirrors.ResolveApplyTarget(),
                 prefix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.ApplyPrefix)));
             harmony.Patch(
+                PowerMirrors.ResolveHandDrawTarget(),
+                postfix: new HarmonyMethod(typeof(PowerMirrors), nameof(PowerMirrors.HandDrawPostfix)));
+            harmony.Patch(
                 MonsterMirrors.ResolveReviveTarget(),
                 postfix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.RevivePostfix)));
             // 钻石冠冕和轰鸣海螺整个换了机制：先把它们从求解器的回合开始名单里摘掉。
