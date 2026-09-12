@@ -167,8 +167,25 @@
    `TriggerBeforeHandDraw` 只遍历 Power，**牌的这个钩子从来不分发** —— 原版 Bolas 在求解器里
    本来就没镜像，不是改动带来的新问题。要补得先在那一段里加上对牌的遍历，属于另一件事。
 3. ~~两张新牌~~ —— CorpseExplosion、LimitBreak 已做（连带 CorpseExplosionPower）。
-4. **新 Boss Doormaker** 及其 `AttackCommand.TargetingRandomOpponents`、OmnidynamicsPower。
+4. **新 Boss Doormaker** —— **判定为不属于本适配的范围**，理由写在下面「边界」一节。
 5. `KnowledgeDemon.ChooseCurse`；饥饿 / 审视刚施加时的一次性感染和手牌上限修正。
+
+## 边界：哪些东西故意不做
+
+本适配要解决的问题是「求解器按原版语义算，而实机已经不那样了」。**新内容不属于这个问题**：
+求解器对它不认识的东西本来就会显式标出来，不会给出一条看似可信的错路线。
+
+- **新 Boss 门匠（Doormaker）**：两半身、互相搬运 Power、自带召唤意图的全新怪物。
+  求解器对不认识的招式，`MonsterMoveEffects.Supports` 返回假，意图被标成 unsupported 并带上
+  「怪物.招式」明细 —— 玩家看到的是红字，不是错的路线。把它整只镜像出来是「给新怪写模拟」，
+  和跟上一个 rebalance 是两件事。连带 `AttackCommand.TargetingRandomOpponents` 的改写
+  （只在场上有门匠时生效）和 `OmnidynamicsPower` 同理。
+- **求解器本来就没镜像的那 33 个怪物招式**：它们的非攻击效果在原版里也没被模拟，
+  改版改了不会让求解器更错。
+- **剩下的怪物侧新 Power**（制造者、寄生+、守护、假随从、耕耘+、归还、幻灭等）：
+  它们的动作类钩子没登记会记一条未镜像风险、显示成红字；取值类钩子会回落到 Power 自己的实现。
+- **`KnowledgeDemon.ChooseCurse`**：改的是「崩解」这张诅咒的数值随计数变化。选哪张诅咒本来
+  就是玩家的选择，求解器走它自己的选择分支；差的只是其中一个选项的数值。
 
 ## 验收
 
