@@ -47,6 +47,7 @@ public static class Entry
                 + OrbPowerMirrors.RegisterAll()
                 + NewCardMirrors.RegisterAll()
                 + EncounterPowerMirrors.RegisterAll()
+                + TaintedPlusMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
@@ -128,6 +129,13 @@ public static class Entry
                 RelicMirrors.ResolveGeneratedToHandTarget(),
                 prefix: new HarmonyMethod(
                     typeof(RelicMirrors), nameof(RelicMirrors.ResolveGeneratedToHandPrefix)));
+            // 污染+ 的病症不是生命火花打的，别让求解器按原版口径当成残留清掉。
+            harmony.Patch(
+                TaintedPlusMirrors.ResolveNormalizeTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(TaintedPlusMirrors), nameof(TaintedPlusMirrors.NormalizePrefix)),
+                postfix: new HarmonyMethod(
+                    typeof(TaintedPlusMirrors), nameof(TaintedPlusMirrors.NormalizePostfix)));
             // 侧回合结束：饥饿/审视的衰减、死神形态+ 提前收割末日。
             harmony.Patch(
                 SideTurnEndDispatch.ResolveTarget(),
