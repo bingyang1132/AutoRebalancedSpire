@@ -66,11 +66,24 @@
   改版：没带「凋零」病症时吃固定 6 点（新变量 `Fixed`，属性 Unpowered|Move）；带了病症则只有
   假升级层数不为 0 才吃 `Damage`（改版基数是 0，每层加 `PerLevel`=3）。按原版算会把一张会
   持续掉血的状态牌当成无害的。诅咒牌 Enthralled / Folly 是纯数据层，不用做。
-- [ ] **1.5 遗物（战斗内的那批）**。`BoomingConch`（回合开始 + 改抽牌数）、`Crossbow`、
-  `DiamondDiadem`、`ChoicesParadox`、`Fiddle`（改抽牌判定）、`HistoryCourse`、
-  `WhisperingEarring`，以及 `AbstractModel` 级的 `ModifyMaxEnergy`、
-  `TryModifyEnergyCostInCombat`、`TryModifyStarCost`、`AfterEnergySpent`、`BeforeSideTurnEnd`、
-  `BeforeCombatStart`。逐个判断求解器是不是镜像了这个遗物。
+- [x] **1.5 遗物（战斗内的那批）**。做了四个：
+  - **十字弩**：生成的攻击牌从「本回合免费」变成「本场免费 + 消耗」。整段接管而不是改参数，
+    抽牌那一步要用同一个 RNG 通道按同样参数取，换写法会让分支之后的随机序列和实机对不上。
+  - **选择悖论**：备选牌改成升级过的。挂在解析这次选择的入口上，备选牌是它的入参。
+  - **小提琴**：`ShouldDraw` 改成对持有者永远为真（原版会挡掉一类抽牌）。这条求解器写在
+    注册表里，走 0.2 那套摘掉再登记。
+  - **钻石冠冕 / 轰鸣海螺**：整个机制换了。先把它们从求解器「参与回合开始结算的遗物」名单里
+    摘掉（那两行做的还是原版的事），再把改版机制补回来 —— 冠冕是「本回合打牌不超过阈值就在
+    回合结束给一层减伤」，海螺是「精英房前 3 张牌免费（能量和星都免）」。
+  
+  **不用做的**：领主之伞（`ModifyMaxEnergy`）走的是游戏自己的监听链，自动跟随；战锤、炼金匣
+  这些求解器压根没镜像，改动也就无从谈起。
+  
+  **踩到一条结构性的事**：RebalancedSpire 是把钩子补在 `AbstractModel` 上的（前缀里判类型），
+  被改的类型自己并没有重写那个虚方法。于是 (1) 求解器的注册表拒绝登记这种类型
+  （`ValidateOverride` 要求真的重写了），只能改挂补丁；(2) `MirroredHookListenerFilter.Capture`
+  一看见基类钩子被打了补丁就**整个关掉监听者过滤**，所以取值类钩子的「没登记就回落到监听者
+  自己的实现」反而全都生效 —— 墨刃、领主之伞这些是这么白捡的。
 - [?] **1.6 战斗外的遗物与奖励**（`AfterObtained`、`AfterCombatVictory`、`TryModifyRewards`、
   `AfterRoomEntered`、`AfterRewardTaken`）。不影响战斗模拟，只可能影响跨战斗估值。先记着。
 

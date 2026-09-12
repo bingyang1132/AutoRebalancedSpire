@@ -47,6 +47,14 @@ internal static class AdapterSelfCheck
             _ = AfterEnergyResetLateDispatch.ResolveTarget();
             _ = PlatingDecayPatch.ResolveTarget();
             _ = CardEnteredCombatPatch.ResolveTarget();
+            _ = RelicMirrors.ResolveGenerateTarget();
+            _ = RelicMirrors.ResolveGeneratedToHandTarget();
+            _ = RelicStatefulMirrors.ResolveParticipatingTarget();
+            _ = RelicStatefulMirrors.ResolveHandDrawTarget();
+            _ = RelicStatefulMirrors.ResolveTurnEndPowerTarget();
+            _ = RelicStatefulMirrors.ResolvePrepareTurnEndTarget();
+            _ = RelicStatefulMirrors.ResolveEnergyCostTarget();
+            _ = RelicStatefulMirrors.ResolveStarCostTarget();
             _ = ExtraTurnPatch.ResolvePrepareTarget();
             _ = ExtraTurnPatch.ResolveLivePrepareTarget();
             _ = ExtraTurnPatch.ResolveConsumeTarget();

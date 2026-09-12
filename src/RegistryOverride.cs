@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Reflection;
-using CombatSolver.Engine.Common.Mirrors;
 
 namespace AutoRebalancedSpire;
 
@@ -12,6 +11,9 @@ namespace AutoRebalancedSpire;
 /// 求解器也没有「允许第三方改写」的入口。RebalancedSpire 改写的 33 张牌里有 5 张
 /// （ConsumingShadow、Glasswork、Refract、Shatter、Spinner）求解器已经写了 bespoke 镜像，
 /// 不摘掉就登记不上。
+///
+/// 参数写成 <c>object</c> 是因为求解器有两种注册表：不带返回值的
+/// <c>MethodMirrorRegistry&lt;TBase, TContext&gt;</c> 和带返回值的三泛型版本，两边的字段名和形状一样。
 ///
 /// 全部走反射，不去引用注册表内部那个私有的 `LookupResult` 类型 —— 那是个私有嵌套 record struct，
 /// 在这边连名字都写不出来。反射只用到非泛型的 <see cref="IDictionary" />，两个字典都实现它。
@@ -31,9 +33,7 @@ internal static class RegistryOverride
     /// 干净失败，好过登记到一半抛在半途 —— 那时一部分牌已经登记、放行补丁还没装，
     /// 状态最难说清。
     /// </remarks>
-    public static string? Probe<TBase, TContext>(MethodMirrorRegistry<TBase, TContext> registry)
-        where TBase : class
-        where TContext : IMethodMirrorContext<TBase>
+    public static string? Probe(object registry)
     {
         foreach (string name in (string[])["_registrations", "_lookupCache"])
         {
@@ -51,11 +51,7 @@ internal static class RegistryOverride
     }
 
     /// <summary>摘掉 <paramref name="modelType" /> 已有的登记。返回是否真的摘掉了一条。</summary>
-    public static bool DropRegistration<TBase, TContext>(
-        MethodMirrorRegistry<TBase, TContext> registry,
-        Type modelType)
-        where TBase : class
-        where TContext : IMethodMirrorContext<TBase>
+    public static bool DropRegistration(object registry, Type modelType)
     {
         IDictionary registrations = Field<IDictionary>(registry, "_registrations");
         if (!registrations.Contains(modelType))
@@ -66,9 +62,7 @@ internal static class RegistryOverride
         return true;
     }
 
-    private static void ClearCaches<TBase, TContext>(MethodMirrorRegistry<TBase, TContext> registry)
-        where TBase : class
-        where TContext : IMethodMirrorContext<TBase>
+    private static void ClearCaches(object registry)
     {
         Field<IDictionary>(registry, "_lookupCache").Clear();
 

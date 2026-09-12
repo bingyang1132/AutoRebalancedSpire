@@ -66,6 +66,40 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 钻石冠冕和轰鸣海螺整个换了机制：先把它们从求解器的回合开始名单里摘掉。
+            harmony.Patch(
+                RelicStatefulMirrors.ResolveParticipatingTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(RelicStatefulMirrors), nameof(RelicStatefulMirrors.ParticipatingPostfix)));
+            harmony.Patch(
+                RelicStatefulMirrors.ResolveHandDrawTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(RelicStatefulMirrors), nameof(RelicStatefulMirrors.HandDrawPostfix)));
+            harmony.Patch(
+                RelicStatefulMirrors.ResolveTurnEndPowerTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(RelicStatefulMirrors), nameof(RelicStatefulMirrors.TurnEndPowerPostfix)));
+            harmony.Patch(
+                RelicStatefulMirrors.ResolvePrepareTurnEndTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(RelicStatefulMirrors), nameof(RelicStatefulMirrors.PrepareTurnEndPostfix)));
+            harmony.Patch(
+                RelicStatefulMirrors.ResolveEnergyCostTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(RelicStatefulMirrors), nameof(RelicStatefulMirrors.EnergyCostPrefix)));
+            harmony.Patch(
+                RelicStatefulMirrors.ResolveStarCostTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(RelicStatefulMirrors), nameof(RelicStatefulMirrors.StarCostPrefix)));
+            // 十字弩生成的牌、选择悖论的备选牌，求解器都写在遗物那个大 switch 里。
+            harmony.Patch(
+                RelicMirrors.ResolveGenerateTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(RelicMirrors), nameof(RelicMirrors.GenerateRelicCardsPrefix)));
+            harmony.Patch(
+                RelicMirrors.ResolveGeneratedToHandTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(RelicMirrors), nameof(RelicMirrors.ResolveGeneratedToHandPrefix)));
             // 牌进场时两个新病症要自查源头 Power 还在不在，求解器那个时点也是写死的 switch。
             harmony.Patch(
                 CardEnteredCombatPatch.ResolveTarget(),
