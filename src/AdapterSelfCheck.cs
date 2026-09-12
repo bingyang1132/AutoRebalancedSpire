@@ -44,6 +44,7 @@ internal static class AdapterSelfCheck
         try
         {
             _ = CalculatedVarPatch.ResolveTarget();
+            _ = OnPlayCompensationPatch.ResolveTarget();
             _ = AfterEnergyResetLateDispatch.ResolveTarget();
             _ = PlatingDecayPatch.ResolveTarget();
             _ = CardEnteredCombatPatch.ResolveTarget();

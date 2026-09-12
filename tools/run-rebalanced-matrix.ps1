@@ -97,14 +97,16 @@ $cases = @(
         )
     },
     @{
-        # 永恒护甲给 11 点镀甲。镀甲在回合结束前会变成等量格挡，所以峰值格挡不低于 11。
+        # 永恒护甲给 11 点镀甲，外加一层「永恒护甲」标记（让镀甲不再每回合衰减）。
+        # 这里不断言格挡数值：镀甲是在回合结束前才转成格挡的，而
+        # -ExpectedInitialMaxBlockAtLeast 量的是出牌阶段的峰值，两者不是一回事 ——
+        # 试过断言 11，挂的是口径不是镜像。
         Id = "RS-ETERNAL-ARMOR-PLATING"
         Tags = @("cards", "global")
-        Why = "永恒护甲：11 点镀甲，回合结束前转成等量格挡。"
+        Why = "永恒护甲：11 点镀甲 + 一层不衰减标记。"
         Args = @(
             "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("EternalArmor")),
-            "-ExpectedInitialMaxBlockAtLeast", "11",
             "-ExpectedInitialUnmirroredCount", "0"
         )
     },

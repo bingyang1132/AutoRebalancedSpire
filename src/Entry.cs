@@ -62,6 +62,11 @@ public static class Entry
             harmony.Patch(
                 AuditFilter.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(AuditFilter), nameof(AuditFilter.Prefix)));
+            // 我们接管了 OnPlay 的牌，求解器那一层按原版语义写的「补偿」要一起关掉。
+            harmony.Patch(
+                OnPlayCompensationPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(OnPlayCompensationPatch), nameof(OnPlayCompensationPatch.Prefix)));
             // 求解器算计算变量时用的是它自己那张写死的乘数表，改版换了公式的牌要接管。
             harmony.Patch(
                 CalculatedVarPatch.ResolveTarget(),

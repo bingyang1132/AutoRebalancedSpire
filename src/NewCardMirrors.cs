@@ -31,11 +31,16 @@ internal static class NewCardMirrors
     }
 
     /// <summary>尸爆：给目标上毒，再上一层「尸爆」。</summary>
+    /// <remarks>
+    /// 变量键是 <c>PoisonPower</c> 不是 <c>Poison</c> —— <c>PowerVar&lt;T&gt;</c> 的单参数构造用的是
+    /// 类型名做键，牌面上那个 <c>DynamicVars.Poison</c> 只是个取值快捷方式。写错了会在结算到
+    /// 这张牌时抛 KeyNotFound，验收矩阵第一次跑就是这么挂的。
+    /// </remarks>
     private static void CorpseExplosion(CorpseExplosion card, CardOnPlayMirrorContext context)
     {
         if (context.CardPlay.Target is not { } target)
             return;
-        V.PowerOn(context, typeof(PoisonPower), target, V.VarInt(card, "Poison"));
+        V.PowerOn(context, typeof(PoisonPower), target, V.VarInt(card, "PoisonPower"));
         if (context.Simulator.HasPendingChoice)
             return;
         V.PowerOn(context, typeof(CorpseExplosionPower), target, V.VarInt(card, "CorpseExplosionPower"));
@@ -47,7 +52,7 @@ internal static class NewCardMirrors
     /// </remarks>
     private static void LimitBreak(LimitBreak card, CardOnPlayMirrorContext context)
     {
-        V.Power(context, typeof(StrengthPower), V.VarInt(card, "Strength"));
+        V.Power(context, typeof(StrengthPower), V.VarInt(card, "StrengthPower"));
         if (context.Simulator.HasPendingChoice)
             return;
         int strength = V.Combat(context).GetAmount<StrengthPower>(V.Self(context));
