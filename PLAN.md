@@ -169,6 +169,12 @@
 4. **新 Boss Doormaker** 及其 `AttackCommand.TargetingRandomOpponents`、OmnidynamicsPower。
 5. `KnowledgeDemon.ChooseCurse`；饥饿 / 审视刚施加时的一次性感染和手牌上限修正。
 
+## 验收
+
+`tools/run-rebalanced-matrix.ps1` 八条，**2026-09-12 17:50 全部通过**（求解器
+`06D43102`，适配层当日构建）。第一次跑是 4/8，挂掉的四条各自都是真问题，见 git 历史里
+「矩阵抓到两处真问题」那一条。
+
 ## 进度
 
 - 2026-09-12 立项。阶段 0.1、0.2、0.3、0.4 完成，只剩 0.5 验收框架。
