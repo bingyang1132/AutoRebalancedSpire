@@ -45,6 +45,7 @@ internal static class AdapterSelfCheck
         {
             _ = CalculatedVarPatch.ResolveTarget();
             _ = AfterEnergyResetLateDispatch.ResolveTarget();
+            _ = PlatingDecayPatch.ResolveTarget();
         }
         catch (MissingMethodException ex)
         {

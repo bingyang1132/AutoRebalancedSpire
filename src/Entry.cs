@@ -35,11 +35,13 @@ public static class Entry
 
         int registered;
         int registeredPowers;
+        int registeredOther;
         try
         {
             MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> onPlay = CardOnPlayMirrors.Registry;
             registered = MirroredCards.RegisterAll(onPlay);
             registeredPowers = PowerMirrors.RegisterAll();
+            registeredOther = EnchantmentMirrors.RegisterAll() + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
         {
@@ -58,6 +60,10 @@ public static class Entry
             harmony.Patch(
                 CalculatedVarPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(CalculatedVarPatch), nameof(CalculatedVarPatch.Prefix)));
+            // 镀甲的衰减规则改了：玩家首回合也减，但有永恒护甲时完全不减。
+            harmony.Patch(
+                PlatingDecayPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
             // 回合开始晚段求解器只跑一个遗物，Power 一个都不发，只能挂在它后面自己分发。
             harmony.Patch(
                 AfterEnergyResetLateDispatch.ResolveTarget(),
@@ -71,6 +77,7 @@ public static class Entry
         }
 
         _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌、"
-            + $"{registeredPowers + AfterEnergyResetLateDispatch.HandlerCount} 个新 Power 的镜像。{check.Detail}");
+            + $"{registeredPowers + AfterEnergyResetLateDispatch.HandlerCount} 个新 Power、"
+            + $"{registeredOther} 处附魔与钩子的镜像。{check.Detail}");
     }
 }

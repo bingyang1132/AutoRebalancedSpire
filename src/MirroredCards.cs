@@ -65,6 +65,31 @@ internal static class MirroredCards
         return Active.Count;
     }
 
+    /// <summary>
+    /// 换掉求解器在别的钩子上已有的登记。返回换掉了几处。
+    /// </summary>
+    /// <remarks>
+    /// 和牌的 <c>OnPlay</c> 不同，这些钩子不参与建根审查，所以没有放行名单要同步；
+    /// 但「摘到了没有」一样要和声明对得上，对不上就是上游动了镜像表。
+    /// </remarks>
+    public static int ReplaceHooks()
+    {
+        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        int replaced = 0;
+        foreach (MirroredHookReplacement hook in StatusCardMirrors.All())
+        {
+            if (!hook.Toggle(settings))
+                continue;
+            if (!hook.Drop())
+                throw new InvalidOperationException(
+                    $"{hook.ModelType.Name}：求解器没有登记这个钩子的镜像，和本适配层记的相反。"
+                    + "上游的镜像表变了，要重新核对。");
+            hook.Register();
+            replaced++;
+        }
+        return replaced;
+    }
+
     /// <summary>这张牌现在是不是仍然由我们镜像着（登记过，而且开关没被改掉）。</summary>
     public static bool StillMirrors(Type cardType)
     {

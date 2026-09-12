@@ -41,15 +41,26 @@
 
 ## 阶段 1：全局战斗规则（不分角色，任何一局都可能遇上）
 
-- [ ] **1.1 镀甲（PlatingPower）的衰减规则变了**。原版每回合减 1；改版：敌人侧按
-  `Decrement` 变量减、且战斗第一轮不减，玩家侧有 `EternalArmorPower` 时**不减**。
-  镀甲是通用 Power，Regent / 无色 / 遗物都会给，算错就是整条防御线算错。
-- [ ] **1.2 附魔**。`Inky`（墨刃）的 `EnchantDamageAdditive` 改成「只对强化攻击加伤」；
-  新附魔 **Energetic**、**Poisonous**（匕首类牌会带）。
-- [ ] **1.3 病症**。`Tainted` 改成不可叠加；新病症 **Devoured、Weighted、Withering、
-  ToItsOriginOwner**。病症挂在牌上，任何角色都可能吃到。
-- [ ] **1.4 状态牌 Wither**。`OnTurnEndInHand` 改成：没带 `Withering` 病症才吃固定伤害，
-  带了则只有 FakeUpgrade 过的才吃 `Damage`。诅咒牌 Enthralled / Folly 是纯数据层，不用做。
+- [x] **1.1 镀甲（PlatingPower）的衰减规则变了**。逐句比过原版：改版有两处差别 ——
+  **玩家第一回合也衰减**（原版跳过那一次；改版里那道判断被写成了一个空的 if），
+  **玩家身上有 `EternalArmorPower` 时完全不衰减**（那个 Power 是个纯标记，一个钩子都没重写）。
+  敌人侧一致。求解器这段不在注册表里：`SimulatedCombatState.TriggerBaseSideTurnStart` 写死了
+  「按 Decrement 减」，减不减由调用方一个布尔参数决定 —— 前缀改那个参数就够，敌人侧不动。
+- [x] **1.2 附魔**。只用镜像 `OnPlay` 两处：**Energetic**（打出给一次能量后自己失效，和原版
+  Sown 逐句同形）、**Poisonous**（给「目标 + 所有可命中敌人」各一份毒 —— 单体牌的目标会进名单
+  两次，原版 `PowerCmd.Apply(IEnumerable)` 不去重，所以目标实际吃两份，看着像笔误但照它实际
+  跑的结果镜像）。改伤害的那几个方法**不用镜像**：求解器算附魔伤害直接调附魔自己的
+  `EnchantDamage*`，`ModifyDamageMultiplicative` 没登记也会回落到监听者自己的实现 ——
+  所以 `Inky` 被改过的加伤公式、充能的「这张牌不造成伤害」都是自动跟上的。
+- [ ] **1.3 病症**。`Tainted` 改成不可叠加（`IsStackable` 是取值方法，多半自动跟随，待确认）；
+  新病症 **Devoured、Weighted**（`AfterCardEnteredCombat` 里按持有者有没有某个 Power 决定
+  清不清掉自己 —— 求解器那个时点是写死的 switch，**不分发给病症**，又是一个要打补丁的缺口）、
+  **Withering**（`OnPlay` 改假升级层数 + 上 `SandsOfTimePower`；`AfterCardExhausted` 把枯萎塞回
+  弃牌堆）、**ToItsOriginOwner**（拜尔多尼斯专属，归怪物批）。
+- [x] **1.4 状态牌 Wither**。求解器登记的是通用的「吃 Damage 点伤害」，用 0.2 那套换掉。
+  改版：没带「凋零」病症时吃固定 6 点（新变量 `Fixed`，属性 Unpowered|Move）；带了病症则只有
+  假升级层数不为 0 才吃 `Damage`（改版基数是 0，每层加 `PerLevel`=3）。按原版算会把一张会
+  持续掉血的状态牌当成无害的。诅咒牌 Enthralled / Folly 是纯数据层，不用做。
 - [ ] **1.5 遗物（战斗内的那批）**。`BoomingConch`（回合开始 + 改抽牌数）、`Crossbow`、
   `DiamondDiadem`、`ChoicesParadox`、`Fiddle`（改抽牌判定）、`HistoryCourse`、
   `WhisperingEarring`，以及 `AbstractModel` 级的 `ModifyMaxEnergy`、
