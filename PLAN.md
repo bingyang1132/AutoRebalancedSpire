@@ -146,8 +146,10 @@
 1. **新 Power 自己的钩子**。牌把 Power 上上去了，Power 的行为还没逐个补 —— 没补的走求解器的
    未镜像风险，会显示成红字，不会静默算错。已补：SpinnerPlusPower、AfterlifePower、
    PingPongPower、SandsOfTimePower、DiamondDiademPower（自动）、EternalArmorPower（纯标记）。
-2. **三张只改了钩子、没改 `OnPlay` 的牌**：RightHandHand（`AfterCardPlayedLate`）、
-   RocketPunch（`AfterCardGeneratedForCombat`）、Bolas（`BeforeHandDraw`）。
+2. ~~三张只改了钩子的牌~~ —— RightHandHand 和 RocketPunch 已做（两张求解器都登记过，
+   走 0.2 那套换掉）。**Bolas 不做**：它改的是 `BeforeHandDraw`，而求解器的
+   `TriggerBeforeHandDraw` 只遍历 Power，**牌的这个钩子从来不分发** —— 原版 Bolas 在求解器里
+   本来就没镜像，不是改动带来的新问题。要补得先在那一段里加上对牌的遍历，属于另一件事。
 3. **两张新牌**：CorpseExplosion、LimitBreak（连带 CorpseExplosionPower）。
 4. **新 Boss Doormaker** 及其 `AttackCommand.TargetingRandomOpponents`、OmnidynamicsPower。
 5. `KnowledgeDemon.ChooseCurse`；饥饿 / 审视刚施加时的一次性感染和手牌上限修正。
