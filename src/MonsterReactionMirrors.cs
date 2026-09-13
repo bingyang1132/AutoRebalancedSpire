@@ -7,6 +7,7 @@ using CombatSolver;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Damage;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Death;
+using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.InCombat.Simulation;
 using RebalancedSpire.Core.Powers;
 
@@ -32,7 +33,8 @@ internal static class MonsterReactionMirrors
         AfterCurrentHpChangedMirrors.Registry.Register<FabricatorPower>(FabricatorHpChanged);
         AfterDeathMirrors.Registry.Register<FabricatorPower>(FabricatorDeath);
         AfterDeathMirrors.Registry.Register<MinionFakePower>(MinionFakeDeath);
-        return 4;
+        ModifyDamageMirrors.MultiplicativeRegistry.Register<FabricatorPower>(FabricatorIncomingDamage);
+        return 5;
     }
 
     /// <summary>耕耘+：祭祀之兽被打到剩血低于阈值时清空力量、眩晕一回合并换招。</summary>
@@ -132,6 +134,38 @@ internal static class MonsterReactionMirrors
     private static bool IntendsToAttack(SimulatedCombatState combat, Creature creature)
         => combat.CurrentMonsterMove(creature).Move.Intents
             .Any(static intent => intent.IntentType is IntentType.Attack or IntentType.DeathBlow);
+
+    /// <summary>组装师：场上还有机器人时，它受到的强化攻击伤害减半。</summary>
+    /// <remarks>
+    /// 这条**看上去**不用镜像：取值类的钩子（<c>Modify*</c>）在监听者过滤被关掉之后会回落到
+    /// Power 自己的实现，自动跟随改版 —— 前提是那份实现只读求解器喂给它的东西。
+    /// 这一条不是：它读的是 <c>CombatState.Enemies</c> 里每只怪**实机当下**的死活和身上的随从层数。
+    ///
+    /// 于是求解器在第一回合做计划时问它「第二回合这一刀打多少」，它照第一回合的实机局面回答
+    /// 「场上没有机器人，不减半」，而第二回合实机已经有两台了 —— 计划里那一刀算成双倍，
+    /// 打完对不上，整局重算。玩家看到的就是「打组装师会重算」。
+    ///
+    /// 所以判据必须照着**模拟局面**重算一遍。这是第三条「能不能自动跟随」的判据：
+    /// 取值钩子只有在它读的状态是求解器传进来的那部分时才自动跟随。
+    /// </remarks>
+    private static decimal FabricatorIncomingDamage(
+        FabricatorPower power,
+        ModifyDamageMirrorContext context)
+    {
+        if (context.Target != power.Owner
+            || power.Owner.Monster is not Fabricator
+            || !context.Props.IsPoweredAttack())
+        {
+            return 1m;
+        }
+        if (context.CombatState is not SimulatedCombatState combat)
+            return 1m;
+
+        bool anyMinionAlive = combat.Enemies.Any(candidate =>
+            context.State.GetCreature(candidate).IsAlive
+            && combat.GetAmount<MinionPower>(candidate) > 0);
+        return anyMinionAlive ? 0.5m : 1m;
+    }
 
     /// <summary>组装师每造一台机器人自伤的量：最大生命的 1/15。</summary>
     private static int SpawnBotCost(SimCreatureState state)

@@ -23,8 +23,13 @@ namespace AutoRebalancedSpire;
 /// <remarks>
 /// 剩下那些新 Power（门匠 Boss 的全能、织机的制造者、拜尔多尼斯的归还等）没有镜像，
 /// 走求解器的未镜像风险 —— 它们的钩子都是动作类，没登记会记一条风险显示成红字，
-/// 不会静默算错。取值类的钩子（伤害倍率、能不能被选中、费用修正）则本来就会回落到
-/// Power 自己的实现，自动跟随。
+/// 不会静默算错。
+///
+/// 取值类的钩子（伤害倍率、能不能被选中、费用修正）**通常**会回落到 Power 自己的实现，
+/// 自动跟随改版 —— 但只在那份实现读的全是求解器喂给它的东西时才成立。
+/// 实现里一旦去读实机模型（<c>CombatState.Enemies</c>、<c>Creature.IsAlive</c> 之类），
+/// 它在搜索里看到的就是**做计划那一刻**的实机局面，整条计划都按那个局面算。
+/// 组装师的减伤就是这么栽的，见 <see cref="MonsterReactionMirrors"/>。
 /// </remarks>
 internal static class EncounterPowerMirrors
 {
@@ -133,6 +138,7 @@ internal static class EncounterPowerMirrors
         }
     }
 
-    private static CounterPredictionState Hits(CombatPredictionSimulator simulator, PowerModel power)
+    /// <summary>枯魂已经记了多少次。<see cref="BranchConditionalPatch"/> 判分支也要读它。</summary>
+    internal static CounterPredictionState Hits(CombatPredictionSimulator simulator, PowerModel power)
         => simulator.StateStore.Get(power, () => new CounterPredictionState(power.DisplayAmount));
 }

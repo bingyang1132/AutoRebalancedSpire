@@ -315,6 +315,55 @@ $cases = @(
             "-CardsJson", (Hand @("DEFEND_IRONCLAD")),
             "-ExpectedInitialUnmirroredCount", "0"
         )
+    },
+    @{
+        # 前六轮都在查「算得对不对」，这条查的是「算出来的计划能不能真打完」。
+        # 计划跨回合，所以不能用 -StopAfterInitialSolverResultAssertion（Full = $true），
+        # 断言换成「第二回合直接复用上一次的计划、一次都没重算」。
+        #
+        # 组装师挂的那一条：FabricatorPower 让它在场上还有机器人时只挨一半伤害，
+        # 而那份实现读的是**实机**的敌人列表。第一回合做计划时场上还没机器人，
+        # 于是第二回合的刀全算成双倍。
+        Id = "RS-FABRICATOR-NO-REPLAN"
+        Encounter = "FABRICATOR_NORMAL"
+        Tags = @("monsters")
+        Full = $true
+        Why = "组装师：第二回合的伤害要算上它的减伤，否则整局重算。"
+        Args = @(
+            # 又是那个默认值：不给血量的话敌人只有 1 点血，第一回合就打完了，
+            # 根本没有第二回合可以复用计划。
+            "-EnemyCurrentHp", "240",
+            # 牌必须是**群伤**：减伤只对组装师本体生效，而第二回合求解器会优先清机器人，
+            # 给单体牌的话它根本不打组装师，这条就又变成什么都没验。
+            # 回合二要有牌可打，所以抽牌堆里也得放。
+            "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", '[{"cardId":"EchoingSlash","pile":"Hand","count":3},{"cardId":"EchoingSlash","pile":"Draw","count":8}]',
+            "-ExpectedReusedTurn", "3",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
+        # 魂枢挂的那一条：汲取生命在改版里只剩一刀，原版跟着的易伤 2、虚弱 2 都没了。
+        # 求解器照原版口径白给玩家两层减益，一到实机就对不上。
+        # 汲取生命是魂枢的第三招，所以这条得跑到第四回合。
+        Id = "RS-SOUL-NEXUS-NO-REPLAN"
+        Encounter = "SOUL_NEXUS_ELITE"
+        Tags = @("monsters")
+        Full = $true
+        Why = "魂枢：汲取生命不再带减益，算多了就整局重算。"
+        Args = @(
+            "-EnemyCurrentHp", "254",
+            # 必须把魂枢的攻击全挡下来。「枯魂」数的是**没挡住**的强化攻击次数，
+            # 满 12 次它就改出「魂印」—— 用初始牌组跑的话两回合就满了（灵魂打击 5 次 +
+            # 漩涡 12 次），根本轮不到汲取生命，这条就白跑了。挡满之后才是
+            # 灵魂打击 → 漩涡 → 汲取生命，第四回合开头才能看出减益多没多。
+            "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", '[{"cardId":"Impervious","pile":"Hand","count":2},{"cardId":"Impervious","pile":"Draw","count":8}]',
+            "-ExpectedReusedTurn", "4",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
     }
 )
 
@@ -358,12 +407,11 @@ foreach ($case in $cases) {
         "-EncounterId", ($case.Encounter ?? "FUZZY_WURM_CRAWLER_WEAK"),
         "-Sts2GameRoot", $GameRoot,
         "-RitsuWorkshopRoot", $RitsuWorkshopRoot,
-        "-StopAfterInitialSolverResultAssertion",
         "-ForceShortSearchOnly",
         "-SearchMaxDegreeOfParallelismForTest", "1",
         "-TimeoutSeconds", "$caseTimeout"
         "-ExitOnComplete"
-    ) + $case.Args
+    ) + ($case.Full ? @() : @("-StopAfterInitialSolverResultAssertion")) + $case.Args
     $output = & pwsh @argv 2>&1
     $ok = $LASTEXITCODE -eq 0
     if (-not $ok) {

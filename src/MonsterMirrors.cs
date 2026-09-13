@@ -344,6 +344,12 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
+            // 汲取生命：改版只剩那一刀，原版跟着的易伤 2、虚弱 2 都没了。
+            // 不补的话求解器每算一次这一招都会白给玩家两层减益，一到实机就对不上、整局重算。
+            case ("SoulNexus", "DRAIN_LIFE_MOVE") when settings.SoulNexus:
+                __result = true;
+                return false;
+
             // 魂印：收掉自己身上所有「枯魂」，给玩家 99 层易伤。
             case ("SoulNexus", "SOUL_MARK_MOVE") when settings.SoulNexus:
                 foreach (SoulWitherPower soulWither in combat.EffectivePowers()

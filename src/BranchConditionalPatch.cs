@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
+using RebalancedSpire.Core.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using System.Reflection;
 using HarmonyLib;
@@ -71,6 +72,24 @@ internal static class BranchConditionalPatch
             return false;
         }
 
+        if (settings.SoulNexus && source.Monster is SoulNexus)
+        {
+            string? fallback = branch.Id switch
+            {
+                "soulNexusBranch" => "MAELSTROM_MOVE",
+                "soulNexus2Branch" => "DRAIN_LIFE_MOVE",
+                "soulNexus3Branch" => "SOUL_STRIKE_MOVE",
+                _ => null,
+            };
+            if (fallback is not null)
+            {
+                __result = AnyPlayerExceedLimit(combat, simulator, owner)
+                    ? "SOUL_MARK_MOVE"
+                    : fallback;
+                return false;
+            }
+        }
+
         if (settings.TurretOperator
             && source.Monster is LivingShield
             && branch.Id == "SHIELD_SLAM_BRANCH")
@@ -84,6 +103,26 @@ internal static class BranchConditionalPatch
 
         return true;
     }
+
+    /// <summary>魂枢身上的「枯魂」有没有记满。</summary>
+    /// <remarks>
+    /// 魂枢三条分支问的都是同一件事：它对某个玩家的强化攻击打中次数有没有到 12。
+    /// 到了就改成「魂印」（收掉枯魂、给玩家 99 层易伤），接着是「灼魂」。
+    ///
+    /// 次数本身不是 Power 的动态变量，是它自己的私有字段，求解器看不见 ——
+    /// <see cref="EncounterPowerMirrors"/> 已经把它镜像成隐藏状态并登记进指纹，这里直接读那份。
+    /// 不读的话这三条分支会回落到求解器建根时抓的那个快照选择，整局按「第一回合还没记满」
+    /// 往下算，跨过 12 次那一刻的换招看不见。
+    /// </remarks>
+    private static bool AnyPlayerExceedLimit(
+        SimulatedCombatState combat,
+        CombatPredictionSimulator simulator,
+        Creature owner)
+        => combat.EffectivePowers()
+            .OfType<SoulWitherPower>()
+            .Where(power => ReferenceEquals(power.Owner, owner))
+            .Any(power => EncounterPowerMirrors.Hits(simulator, power).Value
+                >= power.DynamicVars["MaxCount"].IntValue);
 
     /// <summary>
     /// 改版组装师还造不造机器人。和原版的「同侧活着的不到 4 个」是两个条件。

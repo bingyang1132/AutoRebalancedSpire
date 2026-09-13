@@ -312,6 +312,49 @@
 剩下七条写死的条件分支逐个核过：试验体 `REVIVE_BRANCH` 两个目标 id 和条件都没变，
 其余六个怪（蛙骑士、卵直升机、拉加维林、沉睡甲虫、女王、碗虫岩）改版根本没动。
 
+## 第七轮（实机 bug）：两处让求解器重算的地方
+
+玩家报「打组装师和魂枢会重算」。两个问题包里的分类都是 `stateMismatchReplans: 1` ——
+计划打完之后实机局面和预测对不上，求解器只能整局重算。
+
+### 组装师：减伤没跟着模拟局面走
+
+差异是 `E2.hp expected=93 actual=107`。追到第二回合那记头槌：求解器算 28，实机是 14。
+
+那个 ×2 两边都对（易伤 1.5 + 苛刻 50 层给易伤加的 0.5，见 `CrueltyPower.ModifyVulnerableMultiplier`）。
+差的是 **×0.5**：`FabricatorPower.ModifyDamageMultiplicative` —— 场上还有机器人时，
+组装师受到的强化攻击减半。
+
+**为什么漏掉。** 之前记的判据是「取值钩子（`Modify*`）在监听者过滤被关掉之后会回落到 Power
+自己的实现，自动跟随改版」。这条判据不完整：**只有当那份实现读的全是求解器喂给它的东西时
+才成立**。组装师这份读的是 `CombatState.Enemies` 里每只怪**实机当下**的死活和随从层数。
+于是第一回合做计划时它回答「场上没有机器人，不减半」，而第二回合实机已经有两台了。
+
+改版里带 `ModifyDamage*` 的四个类型，只有这一个中招；钻石冠冕、长距离、Energetic 附魔
+都只读传进来的参数。补在 `src/MonsterReactionMirrors.cs`。
+
+### 魂枢：汲取生命的减益被删了，求解器还在给
+
+差异是玩家身上多出两层减益（预测 7 个 Power，实际 5 个）。原版 `DrainLifeMove` 是
+一刀 + 易伤 2 + 虚弱 2，改版只剩那一刀，连意图里的 `DebuffIntent` 都去掉了。
+这是「把效果清空」那一类的又一例 —— 招式 id 还在、还是攻击，只有攻击之外那半截没了。
+
+顺手补了同一场的另一处：魂枢有三条条件分支（`soulNexusBranch` / `2` / `3`），
+问的都是「枯魂记满 12 次没有」。求解器那张写死的表里没有魂枢，会回落到建根时的快照选择，
+整局按「还没记满」算。次数本身已经镜像成隐藏状态了，直接读那份。
+
+### 验收方式也得换
+
+前六轮的用例都在验「算得对不对」（`-ExpectedInitialUnmirroredCount 0`，只看首轮）。
+这两条验的是「算出来的计划能不能真打完」，用
+`-ExpectedReusedTurn N -ExpectedUnexpectedReplansAtMost 0 -StopAfterExpectedReuse`。
+这类用例不能停在首轮，矩阵脚本加了个 `Full` 开关。
+
+两条都卡了好几轮才真正咬住，坑记在
+[solver-adapter-pitfalls.md](../docs/solver-adapter-pitfalls.md) 的验收一节：
+`-ExpectedReusedTurn N` 只验到第 N−1 回合；而且要先确认那条路径真的被走到
+（组装师得用群伤牌，魂枢得让玩家全挡下来）。
+
 ## 性能：开关**必须**自己缓存
 
 `RebalancedSpireSettingsStore.Settings` 这个属性每读一次都是
