@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Models;
@@ -19,6 +20,7 @@ using CombatSolver.Engine.InCombat.Mirrors.Hooks.Death;
 using CombatSolver.Engine.InCombat.Simulation;
 using RebalancedSpire.Core.Configs;
 using RebalancedSpire.Core.Powers;
+using RebalancedSpire.Core.Cards;
 
 namespace AutoRebalancedSpire;
 
@@ -323,10 +325,274 @@ internal static class MonsterMirrors
                     combat.SetPowerAmount(pingPong, 0);
                 return true;
 
+            // ---------- 改版新加的招式：求解器那张表里没有，不补就会被标成「不支持」 ----------
+
+            // 咆哮：给自己 3 层狂怒。
+            case ("TestSubject", "GROWL_MOVE") when settings.TestSubject:
+                combat.Apply<EnragePower>(owner, 3, owner);
+                __result = true;
+                return false;
+
+            // 备战 / 备战二：改版只剩台词。原版的备战是加甲，求解器照原版算会多给一份格挡。
+            case ("MagiKnight", "PREP_MOVE") when settings.Knights:
+            case ("MagiKnight", "PREP_2_MOVE") when settings.Knights:
+                __result = true;
+                return false;
+
+            // 蓄势：改版同样只剩演出，原版是给自己 2 力量。
+            case ("Vantom", "PREPARE_MOVE") when settings.Vantom:
+                __result = true;
+                return false;
+
+            // 魂印：收掉自己身上所有「枯魂」，给玩家 99 层易伤。
+            case ("SoulNexus", "SOUL_MARK_MOVE") when settings.SoulNexus:
+                foreach (SoulWitherPower soulWither in combat.EffectivePowers()
+                             .OfType<SoulWitherPower>()
+                             .Where(candidate => ReferenceEquals(candidate.Owner, owner))
+                             .ToArray())
+                {
+                    combat.SetPowerAmount(soulWither, 0);
+                }
+                combat.ApplyFromMonster<VulnerablePower>(player, 99, owner);
+                __result = true;
+                return false;
+
+            // 逃跑：组装师血量不够再造机器人时直接离场。
+            case ("Fabricator", "ESCAPE_MOVE") when settings.Fabricator:
+                combat.CreatureEscaped(owner);
+                __result = true;
+                return false;
+
+            // 组装：和原版一样造两台，但改版每造一台自己掉最大生命的 1/15。
+            // 少算这份自伤会让组装师显得比实际难杀得多。
+            case ("Fabricator", "FABRICATE_MOVE") when settings.Fabricator:
+            {
+                int selfDamage = SpawnBotDamage(simulator, owner);
+                foreach (bool defensive in new[] { true, false })
+                {
+                    MonsterMoveEffects.SpawnFabricatorBot(simulator, combat, owner, defensive);
+                    if (simulator.HasPendingChoice)
+                        return false;
+                    simulator.Damage(
+                        owner,
+                        selfDamage,
+                        ValueProp.Unblockable | ValueProp.Unpowered | ValueProp.SkipHurtAnim,
+                        owner);
+                    if (simulator.HasPendingChoice)
+                        return false;
+                }
+                __result = true;
+                return false;
+            }
+
+            // 举盾：给自己加甲。
+            case ("LivingShield", "SHIELD_UP_MOVE") when settings.TurretOperator:
+                simulator.GainBlock(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 25, 20),
+                    ValueProp.Move);
+                __result = true;
+                return false;
+
+            // 弱化黏液 / 挥击：都是给玩家 2 层虚弱。
+            case ("HunterKiller", "WEAK_GOOP_MOVE") when settings.HunterKiller:
+            case ("ThievingHopper", "ATTACK_MOVE") when settings.ThievingHopper:
+                combat.ApplyFromMonster<WeakPower>(player, 2, owner);
+                __result = true;
+                return false;
+
+            // 第一踏 / 第二踏：按初始最大生命的 80% / 40% 给自己挂「耕耘+」的阈值。
+            case ("CeremonialBeast", "FIRST_STAMP_MOVE") when settings.CeremonialBeast:
+            case ("CeremonialBeast", "SECOND_STAMP_MOVE") when settings.CeremonialBeast:
+            {
+                float ratio = move.Move.Id == "FIRST_STAMP_MOVE" ? 0.8f : 0.4f;
+                int threshold = (int)((float)TryStatic(combat, owner, "MaxInitialHp") * ratio);
+                combat.Apply<PlowPlusPower>(owner, threshold, owner);
+                __result = true;
+                return false;
+            }
+
+            // 守护：加甲并给自己挂「守护」（那层让祭司在有人没破甲时不可选中）。
+            case ("KinFollower", "GUARD_MOVE") when settings.TheKin:
+                simulator.GainBlock(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 15, 13),
+                    ValueProp.Move);
+                if (simulator.HasPendingChoice)
+                    return false;
+                combat.Apply<GuardPower>(owner, 1, owner);
+                __result = true;
+                return false;
+
+            // 假守护：只加甲，不挂「守护」。
+            case ("KinFollower", "GUARD_FAKE_MOVE") when settings.TheKin:
+                simulator.GainBlock(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 10, 8),
+                    ValueProp.Move);
+                __result = true;
+                return false;
+
+            // 复仇之舞：给自己力量。
+            case ("KinFollower", "REVENGE_DANCE_MOVE") when settings.TheKin:
+                combat.Apply<StrengthPower>(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 8, 6),
+                    owner);
+                __result = true;
+                return false;
+
+            // 假力量之舞：按玩家人数治自己。
+            case ("KinFollower", "POWER_DANCE_FAKE_MOVE") when settings.TheKin:
+                simulator.Heal(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 8, 6) * combat.Players.Count);
+                __result = true;
+                return false;
+
+            // 逃跑：假随从演完就走。奖励是战斗外的事，这里只让它离场。
+            case ("KinFollower", "ESCAPE_MOVE") when settings.TheKin:
+                if (combat.GetAmount<MinionFakePower>(owner) > 0)
+                    combat.CreatureEscaped(owner);
+                __result = true;
+                return false;
+
+            // 护卫：祭司召两只信徒，第二只开局就跳舞。
+            case ("KinPriest", "GUARD_MOVE") when settings.TheKin:
+                MonsterSpawnSupport.Spawn<KinFollower>(simulator, combat, owner, "slot1");
+                if (simulator.HasPendingChoice)
+                    return false;
+                MonsterSpawnSupport.Spawn<KinFollower>(
+                    simulator, combat, owner, "slot2",
+                    configure: follower => follower.StartsWithDance = true);
+                __result = true;
+                return false;
+
+            // 强化 / 护盾 / 治疗：都只作用在「除祭司以外的敌人」身上。
+            case ("KinPriest", "POWER_UP_MOVE") when settings.TheKin:
+            case ("KinPriest", "SHIELD_UP_MOVE") when settings.TheKin:
+            case ("KinPriest", "HEAL_UP_MOVE") when settings.TheKin:
+            {
+                string moveId = move.Move.Id;
+                foreach (Creature ally in combat.Enemies
+                             .Where(static candidate => candidate.Monster is not KinPriest)
+                             .ToArray())
+                {
+                    switch (moveId)
+                    {
+                        case "POWER_UP_MOVE":
+                            combat.Apply<StrengthPower>(
+                                ally,
+                                AscensionHelper.GetValueIfAscension((AscensionLevel)9, 3, 2),
+                                owner);
+                            break;
+                        case "SHIELD_UP_MOVE":
+                            simulator.GainBlock(
+                                ally,
+                                AscensionHelper.GetValueIfAscension((AscensionLevel)9, 10, 8),
+                                ValueProp.Move);
+                            break;
+                        default:
+                            simulator.Heal(
+                                ally,
+                                AscensionHelper.GetValueIfAscension((AscensionLevel)9, 6, 5)
+                                    * combat.Players.Count);
+                            break;
+                    }
+                    if (simulator.HasPendingChoice)
+                        return false;
+                }
+                __result = true;
+                return false;
+            }
+
+            // 击溃：攻击之外再给玩家各 1 层脆弱和虚弱。
+            case ("KinPriest", "BREAK_UP_MOVE") when settings.TheKin:
+                combat.ApplyFromMonster<FrailPower>(player, 1, owner);
+                combat.ApplyFromMonster<WeakPower>(player, 1, owner);
+                __result = true;
+                return false;
+
+            // 发怒：给自己一层「领地」，把玩家牌里的拜尔多尼斯之卵全部标记，再给玩家 2 层脆弱。
+            case ("Byrdonis", "ANGRY_MOVE") when settings.Byrdonis:
+            {
+                combat.Apply<TerritorialPower>(owner, 1, owner);
+                if (simulator.HasPendingChoice)
+                    return false;
+                foreach (Player target in combat.Players)
+                {
+                    foreach (PredictedCard card in simulator.State
+                                 .GetPlayerCombatState(target).AllCards.ToArray())
+                    {
+                        if (card.Preview is ByrdonisEgg)
+                            simulator.Afflict<ToItsOriginOwner>(card, 1m);
+                    }
+                }
+                combat.ApplyFromMonster<FrailPower>(player, 2, owner);
+                __result = true;
+                return false;
+            }
+
+            // 增殖：层数不满 4 就给自己加一层「寄生+」，再给玩家 2 层虚弱。
+            // 层数超过 2 之后每加一层还会长 20% 最大生命并把长出来的那份治满。
+            case ("PhrogParasite", "PROLIFERATION_MOVE") when settings.PhrogParasite:
+            case ("PhrogParasite", "PROLIFERATION_2_MOVE") when settings.PhrogParasite:
+            case ("PhrogParasite", "PROLIFERATION_3_MOVE") when settings.PhrogParasite:
+            {
+                if (combat.GetAmount<InfestedPlusPower>(owner) < 4)
+                {
+                    combat.Apply<InfestedPlusPower>(owner, 1, owner);
+                    if (simulator.HasPendingChoice)
+                        return false;
+                    if (combat.GetAmount<InfestedPlusPower>(owner) > 2)
+                    {
+                        SimCreatureState state = simulator.State.GetCreature(owner);
+                        int gain = (int)((float)state.MaxHp * 0.2f);
+                        state.SetMaxHp(state.MaxHp + gain);
+                        simulator.Heal(owner, gain);
+                        if (simulator.HasPendingChoice)
+                            return false;
+                    }
+                }
+                combat.ApplyFromMonster<WeakPower>(player, 2, owner);
+                __result = true;
+                return false;
+            }
+
+            // 感染二：和感染同一个实现，只是出招表里多排了一次。
+            case ("PhrogParasite", "INFECT_2_MOVE") when settings.PhrogParasite:
+            {
+                int infested2 = combat.GetAmount<InfestedPlusPower>(owner);
+                if (infested2 > 0)
+                    simulator.AddToCombat<Infection>(player, PileType.Discard, infested2, null);
+                __result = true;
+                return false;
+            }
+
+            // 打我：和自己人互殴 —— 对**其他每只敌人**打一份快拳伤害。
+            case ("PunchConstruct", "FIGHT_WITH_ME") when settings.PunchOff:
+            {
+                int punch = TryStatic(combat, owner, "FastPunchDamage");
+                foreach (Creature enemy in combat.Enemies
+                             .Where(candidate => !ReferenceEquals(candidate, owner))
+                             .ToArray())
+                {
+                    simulator.Damage([enemy], punch, ValueProp.Move, owner);
+                    if (simulator.HasPendingChoice)
+                        return false;
+                }
+                __result = true;
+                return false;
+            }
+
             default:
                 return true;
         }
     }
+
+    /// <summary>组装师每造一台机器人自伤的量：最大生命的 1/15。</summary>
+    private static int SpawnBotDamage(CombatPredictionSimulator simulator, Creature owner)
+        => (int)((float)simulator.State.GetCreature(owner).MaxHp * (1f / 15f));
 
     /// <summary>读怪物身上一个静态数值，读不到就返回 0 并记一条风险。</summary>
     /// <remarks>

@@ -76,6 +76,28 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 寄生蛙精英死后生几只蠕虫由「寄生+」的层数决定，求解器认不出这个新 Power。
+            harmony.Patch(
+                DeathSpawnPatch.ResolveSpawnsPrimaryTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(DeathSpawnPatch), nameof(DeathSpawnPatch.SpawnsPrimaryPostfix)));
+            harmony.Patch(
+                DeathSpawnPatch.ResolveTriggerTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(DeathSpawnPatch), nameof(DeathSpawnPatch.TriggerPostfix)));
+            // 改版新加的招式 id 求解器那张表里没有，不补会被整条标成「不支持」。
+            harmony.Patch(
+                MoveCoveragePatch.ResolveSupportsTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(MoveCoveragePatch), nameof(MoveCoveragePatch.SupportsPostfix)));
+            harmony.Patch(
+                MoveCoveragePatch.ResolveRemovesOwnerTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(MoveCoveragePatch), nameof(MoveCoveragePatch.RemovesOwnerPostfix)));
+            harmony.Patch(
+                MoveCoveragePatch.ResolveStaticCaptureTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(MoveCoveragePatch), nameof(MoveCoveragePatch.StaticCapturePostfix)));
             // 被换掉实现的敌人招式：求解器那张「怪物 + 招式 id」的大表不是注册表。
             harmony.Patch(
                 MonsterMirrors.ResolveApplyTarget(),
