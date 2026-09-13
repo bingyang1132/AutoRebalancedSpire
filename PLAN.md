@@ -249,6 +249,36 @@
 
 见下面「玩家须知」和「边界」。
 
+## 第五个没有第三方入口的地方：字符串字段的语义分类
+
+玩家报「感染棱柱识别不了」。根因不在那场战斗，也不在我们的镜像里：
+
+求解器给动态变量算指纹时，遇到 `StringVar` 会去问
+`SemanticStateFieldPolicy.ClassifyString(类型, 字段名)` 这个字段算不算「影响结算」。
+那是一张写死的白名单，**认不出来就抛异常**。上游这么写是为了自己加新 Power 时不会漏分类，
+但对第三方 Power 来说，后果是整场战斗算不出来。
+
+改版有**七个**新 Power 带这种变量，每一个对应一场战斗：
+
+| Power | 字段 | 战斗 |
+|---|---|---|
+| `TaintedPlusPower` | `AfflictionTitle` | 感染棱柱精英 |
+| `GuardPower` | `MasterName` | 信众 |
+| `InfestedPlusPower` | `PhrogParasite` | 寄生蛙精英 |
+| `LeechingHugPower` | `Slimed`、`SlimedBerserker` | 黏液狂战士 |
+| `LongDistancePower` | `TheInsatiable` | 贪食者 |
+| `PingPongPower` | `LivingFog` | 活体迷雾 |
+| `SoulWitherPower` | `SoulNexus` | 魂枢 |
+
+七个字段全是「某张牌／某只怪的名字」，拿去填提示文字用的，一个都不参与结算 ——
+和上游自己已经列进白名单的 `VitalSparkPower.AfflictionTitle` 是同一类东西。
+
+补法见 `src/StringFieldPolicyPatch.cs`。名单外的字段如果来自 RebalancedSpire，
+**按只用于显示处理并记一条警告**，不跟着抛：字符串在这套模型里只进本地化插值，
+没有任何结算读它，而抛出去的代价是整场战斗用不了。
+
+这条同时也是问题包导不出来的原因 —— `ContinuationStamp` 走同一个分类器。
+
 ## 性能：开关**必须**自己缓存
 
 `RebalancedSpireSettingsStore.Settings` 这个属性每读一次都是
@@ -317,8 +347,8 @@ Harmony 补丁，就整个关掉监听者过滤；而平衡尖塔补了好几个
 
 ## 验收
 
-`tools/run-rebalanced-matrix.ps1` **十三条，2026-09-12 20:44 全部通过**（求解器 `06D43102`，
-适配层当日构建 `1665b52a`；开关缓存修复后 21:17 复跑同样 13/13）。
+`tools/run-rebalanced-matrix.ps1` **十五条，2026-09-12 22:51 全部通过**（求解器 `06D43102`，
+适配层当日构建）。
 
 前八条盯单张牌和全局规则；第二轮加的三条盯**通道本身走不走得通**（必然结局+ 的回合开始选牌、
 周密计划+ 的回合结束选牌、无尽之刃+ 让手牌上限随分支变）；第四轮加的两条盯遗物：
@@ -328,6 +358,10 @@ Harmony 补丁，就整个关掉监听者过滤；而平衡尖塔补了好几个
   起防峰值必然不是断言的 8。用的牌和 `RS-UNTOUCHABLE-REPEAT-BLOCK` 是同一张，
   所以这条挂掉只可能是耳环那一段的问题。
 - `RS-HISTORY-COURSE-SKILL-REPLAY` 盯两处补完之后整条搜索不抛。
+
+最后两条盯的是「字符串字段分类」那个坑：一条直接注入 `TaintedPlusPower`，
+一条跑真实的感染棱柱精英战。**把 `StringFieldPolicyPatch` 摘掉之后这两条会超时失败** ——
+这个 A/B 做过了，否则「通过」什么都不证明：第一次跑的那个场景里根本没有出问题的那个 Power。
 
 跑之前三个环境变量都要设（`COMBATSOLVER_HEADLESS_ROOT`、`COMBATSOLVER_HEADLESS_HOST_ROOT`、
 `NUGET_PACKAGES`）。脚本开头会先拦一道：缺了的话之前跑出来是「全挂」，

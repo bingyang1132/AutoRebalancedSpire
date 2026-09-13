@@ -68,6 +68,13 @@ public static class Entry
         try
         {
             var harmony = new Harmony(ModId);
+            // 改版新 Power 上的字符串变量：求解器那张分类白名单认不出来就抛，
+            // 一抛整场战斗就算不出来。七个新 Power 都带，七场战斗都会中招。
+            StringFieldPolicyPatch.Initialize(_logger);
+            harmony.Patch(
+                StringFieldPolicyPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(StringFieldPolicyPatch), nameof(StringFieldPolicyPatch.Prefix)));
             harmony.Patch(
                 AuditFilter.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(AuditFilter), nameof(AuditFilter.Prefix)));

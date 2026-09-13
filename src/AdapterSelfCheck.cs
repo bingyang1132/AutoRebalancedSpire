@@ -62,6 +62,7 @@ internal static class AdapterSelfCheck
             _ = ExtraTurnPatch.ResolvePrepareTarget();
             _ = ExtraTurnPatch.ResolveLivePrepareTarget();
             _ = ExtraTurnPatch.ResolveConsumeTarget();
+            _ = StringFieldPolicyPatch.ResolveTarget();
         }
         catch (MissingMethodException ex)
         {

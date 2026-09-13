@@ -251,6 +251,35 @@ $cases = @(
             "-CardsJson", (Hand @("Untouchable")),
             "-ExpectedInitialUnmirroredCount", "0"
         )
+    },
+    @{
+        # 改版新 Power 上的字符串变量。求解器给动态变量算指纹时遇到 StringVar 会去问
+        # SemanticStateFieldPolicy 这个字段算不算「影响结算」，那是一张写死的白名单，
+        # 认不出来就**抛异常** —— 整场战斗算不出来。七个新 Power 都带这种变量。
+        #
+        # 这条挂掉 = 那七场战斗全都用不了。实测把补丁摘掉这条会直接超时。
+        # 逐个列出来跑，是因为它们分属不同遭遇，白名单漏一个就漏一整场。
+        Id = "RS-STRING-VAR-POWERS"
+        Tags = @("powers", "global")
+        Why = "七个带字符串变量的新 Power：指纹分类不认就整场算不出来。"
+        Args = @(
+            "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("Untouchable")),
+            "-PowerId", "TaintedPlusPower", "-PowerAmount", "1", "-PowerTarget", "Player",
+            "-ExpectedInitialMaxBlockAtLeast", "8",
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 和上一条同一个机制，换一个 Power 和一个真实遭遇：感染棱柱精英战。
+        # 玩家报的就是这一场「识别不了」。
+        Id = "RS-INFESTED-PRISM-ELITE"
+        Encounter = "INFESTED_PRISMS_ELITE"
+        Tags = @("powers", "global")
+        Why = "感染棱柱精英战：整场能不能算出来。"
+        Args = @(
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
     }
 )
 
@@ -291,7 +320,7 @@ foreach ($case in $cases) {
         "-NoProfile", "-File", $runner,
         "-ScenarioId", $case.Id,
         "-CharacterId", ($case.Character ?? "IRONCLAD"),
-        "-EncounterId", "FUZZY_WURM_CRAWLER_WEAK",
+        "-EncounterId", ($case.Encounter ?? "FUZZY_WURM_CRAWLER_WEAK"),
         "-Sts2GameRoot", $GameRoot,
         "-RitsuWorkshopRoot", $RitsuWorkshopRoot,
         "-StopAfterInitialSolverResultAssertion",
