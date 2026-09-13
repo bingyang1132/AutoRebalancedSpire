@@ -219,6 +219,38 @@ $cases = @(
             "-CardsJson", (Hand @("InfiniteBlades")),
             "-ExpectedInitialUnmirroredCount", "0"
         )
+    },
+    @{
+        # 低语耳环是本适配层改动最大的一处：原版第一回合直接连打 13 张，改版整个关掉，
+        # 换成「本场攒够 13 点能量之后，下一张牌打完触发那一轮连打」。
+        #
+        # 这条盯的是**原版那一段真的被拦住了**：耳环在身上、第一回合，如果拦漏了，
+        # 求解器会替玩家连打 13 张，手牌被清空，起防峰值必然不是这里断言的 8。
+        # 不可触碰本身是「4 格挡 × 重复 2 次」，和 RS-UNTOUCHABLE-REPEAT-BLOCK 同一张牌，
+        # 所以这条挂掉只可能是耳环那一段的问题。
+        Id = "RS-WHISPERING-EARRING-NO-TURN1-AUTOPLAY"
+        Tags = @("relics", "global")
+        Why = "低语耳环：原版的第一回合连打必须被拦住。"
+        Args = @(
+            "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-RelicsJson", '[{"relicId":"WHISPERING_EARRING","addWithoutObtainedEffects":true}]',
+            "-CardsJson", (Hand @("Untouchable")),
+            "-ExpectedInitialMaxBlockAtLeast", "8",
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 战史课程的重放范围从「攻击」放宽到「攻击或技能」。改动落在求解器两个写死的方法上，
+        # 其中一个只在「建根时还没物化」的分支里走到。这条盯的是两处补完之后整条搜索不抛。
+        Id = "RS-HISTORY-COURSE-SKILL-REPLAY"
+        Tags = @("relics")
+        Why = "战史课程：重放范围放宽到技能牌。"
+        Args = @(
+            "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-RelicsJson", '[{"relicId":"HISTORY_COURSE","addWithoutObtainedEffects":true}]',
+            "-CardsJson", (Hand @("Untouchable")),
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
     }
 )
 

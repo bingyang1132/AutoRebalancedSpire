@@ -42,6 +42,7 @@ public static class Entry
             MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> onPlay = CardOnPlayMirrors.Registry;
             registered = MirroredCards.RegisterAll(onPlay);
             registeredPowers = PowerMirrors.RegisterAll();
+            WhisperingEarringPatch.RegisterState();
             registeredOther = EnchantmentMirrors.RegisterAll()
                 + AfflictionMirrors.RegisterAll()
                 + MonsterMirrors.RegisterAll()
@@ -50,6 +51,7 @@ public static class Entry
                 + EncounterPowerMirrors.RegisterAll()
                 + TaintedPlusMirrors.RegisterAll()
                 + MonsterReactionMirrors.RegisterAll()
+                + PotionMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
@@ -78,6 +80,28 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 低语耳环整个换了触发条件：原版第一回合连打，改版改成攒满 13 点能量后的下一张牌。
+            harmony.Patch(
+                WhisperingEarringPatch.ResolveTriggerTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(WhisperingEarringPatch), nameof(WhisperingEarringPatch.TriggerPrefix)));
+            harmony.Patch(
+                WhisperingEarringPatch.ResolveEnergySpentTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(WhisperingEarringPatch), nameof(WhisperingEarringPatch.EnergySpentPostfix)));
+            harmony.Patch(
+                WhisperingEarringPatch.ResolveCardPlayedLateTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(WhisperingEarringPatch), nameof(WhisperingEarringPatch.CardPlayedLatePostfix)));
+            // 战史课程重放的范围从「攻击」放宽到「攻击或技能」。
+            harmony.Patch(
+                HistoryCoursePatch.ResolveRecordTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(HistoryCoursePatch), nameof(HistoryCoursePatch.RecordPrefix)));
+            harmony.Patch(
+                HistoryCoursePatch.ResolveLookupTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(HistoryCoursePatch), nameof(HistoryCoursePatch.LookupPrefix)));
             // 流星锤每次自己飞回手里伤害永久 +3；回手那一半求解器本来就模拟。
             harmony.Patch(
                 BolasIncrementPatch.ResolveTarget(),
