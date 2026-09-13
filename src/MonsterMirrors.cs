@@ -66,7 +66,7 @@ internal static class MonsterMirrors
         Creature creature,
         string moveId)
     {
-        if (moveId != "REVIVE_MOVE" || !RebalancedSpireSettingsStore.Settings.TheObscura)
+        if (moveId != "REVIVE_MOVE" || !AdapterSettings.Current.TheObscura)
             return;
         if (creature.Monster is not Parafright)
             return;
@@ -118,7 +118,7 @@ internal static class MonsterMirrors
         Creature player,
         ref bool __result)
     {
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         Creature owner = move.Owner;
         switch (owner.Monster?.GetType().Name, move.Move.Id)
         {

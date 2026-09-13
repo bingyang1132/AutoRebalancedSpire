@@ -49,7 +49,7 @@ internal static class MoveCoveragePatch
     {
         if (__result)
             return;
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         __result = (monster.GetType().Name, moveId) switch
         {
             ("Aeonglass", "WITHERING_MOVE") => settings.Aeonglass,
@@ -88,7 +88,7 @@ internal static class MoveCoveragePatch
     {
         if (__result)
             return;
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         __result = (monster.GetType().Name, moveId) switch
         {
             ("Fabricator", "ESCAPE_MOVE") => settings.Fabricator,

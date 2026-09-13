@@ -249,6 +249,38 @@
 
 见下面「玩家须知」和「边界」。
 
+## 性能：开关**必须**自己缓存
+
+`RebalancedSpireSettingsStore.Settings` 这个属性每读一次都是
+
+```csharp
+ModDataStore.For("RebalancedSpire").CreateCache<RebalancedSpireSettings>("settings").Value
+```
+
+而 `CreateCache` 字面意思就是 `new ModDataStoreCache<T>(...)`：每次调用新建一个缓存对象、
+一把锁，并且**往数据仓库的 `EntryReloaded` 事件上再挂一个处理器**，还从不释放。
+于是每读一次开关就多几笔分配、事件订阅列表长一截 —— 越跑越慢，而且是复利。
+
+RebalancedSpire 自己没事，它只在每个补丁类的 `static readonly bool Disabled` 里读一次；
+踩坑的是适配层：出牌、怪物出招、意图预测这些每秒成千上万次的路径上都在读。
+
+同一个四回合场景（无头 harness，并行度钉死 1）：
+
+| | 搜索耗时 | 分配 |
+|---|---|---|
+| 原版（两个 mod 都移出） | 816 ms | 66 MB |
+| 只装平衡尖塔 | 955 ms | 67 MB |
+| + 适配层，开关不缓存 | 1139 ms | **644 MB** |
+| + 适配层，开关缓存一次 | 973 ms | 70 MB |
+
+所以：**热路径上一律用 `AdapterSettings.Current`，不要用 `RebalancedSpireSettingsStore.Settings`。**
+只有 `AdapterSelfCheck` 里那一处「读得到吗」保留原样。
+
+顺带量出来的另一件事，**适配层修不了**：平衡尖塔自己就要 +17%。求解器的
+`MirroredHookListenerFilter.Capture()` 一旦发现**任何**一个 `AbstractModel` 基类钩子上挂了
+Harmony 补丁，就整个关掉监听者过滤；而平衡尖塔补了好几个。之后每次钩子分发都要走完整份
+监听者名单。这是上游的事。
+
 ## 玩家须知：把「门匠」关掉
 
 **在 RebalancedSpire 的设置里关掉「Doormaker」。** 本适配层没有为这只新 Boss 写模拟，
@@ -286,7 +318,7 @@
 ## 验收
 
 `tools/run-rebalanced-matrix.ps1` **十三条，2026-09-12 20:44 全部通过**（求解器 `06D43102`，
-适配层当日构建 `1665b52a`）。
+适配层当日构建 `1665b52a`；开关缓存修复后 21:17 复跑同样 13/13）。
 
 前八条盯单张牌和全局规则；第二轮加的三条盯**通道本身走不走得通**（必然结局+ 的回合开始选牌、
 周密计划+ 的回合结束选牌、无尽之刃+ 让手牌上限随分支变）；第四轮加的两条盯遗物：

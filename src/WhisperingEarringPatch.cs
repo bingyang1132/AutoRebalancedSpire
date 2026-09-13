@@ -96,7 +96,7 @@ internal static class WhisperingEarringPatch
     /// <summary>原版的第一回合连打：改版关掉了，这里拦住。自己再入时放行。</summary>
     public static bool TriggerPrefix(ref bool __result)
     {
-        if (_reentering || !RebalancedSpireSettingsStore.Settings.WhisperingEarring)
+        if (_reentering || !AdapterSettings.Current.WhisperingEarring)
             return true;
         __result = true;
         return false;
@@ -109,7 +109,7 @@ internal static class WhisperingEarringPatch
         PredictedCard card,
         int amount)
     {
-        if (amount <= 0 || !RebalancedSpireSettingsStore.Settings.WhisperingEarring)
+        if (amount <= 0 || !AdapterSettings.Current.WhisperingEarring)
             return;
         if (card.Preview.Owner is not { } owner)
             return;
@@ -143,7 +143,7 @@ internal static class WhisperingEarringPatch
     {
         if (listener is not WhisperingEarring relic || relic.IsMelted)
             return;
-        if (!RebalancedSpireSettingsStore.Settings.WhisperingEarring)
+        if (!AdapterSettings.Current.WhisperingEarring)
             return;
         if (context.PreviewCard.Owner != relic.Owner)
             return;

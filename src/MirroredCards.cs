@@ -47,7 +47,7 @@ internal static class MirroredCards
 
     public static int RegisterAll(MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> registry)
     {
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         foreach (MirroredCard card in CardMirrors.All())
         {
             if (!card.Toggle(settings))
@@ -74,7 +74,7 @@ internal static class MirroredCards
     /// </remarks>
     public static int ReplaceHooks()
     {
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         int replaced = 0;
         foreach (MirroredHookReplacement hook in StatusCardMirrors.All()
                      .Concat(RelicMirrors.Replacements())
@@ -98,7 +98,7 @@ internal static class MirroredCards
     {
         if (!ActiveTypes.Contains(cardType))
             return false;
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         return Active.Where(card => card.CardType == cardType).All(card => card.Toggle(settings));
     }
 }

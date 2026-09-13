@@ -45,7 +45,7 @@ internal static class CalculatedVarPatch
         _ = target;
         if (card.Preview is not ExpectAFight)
             return true;
-        if (!RebalancedSpireSettingsStore.Settings.ExpectAFight)
+        if (!AdapterSettings.Current.ExpectAFight)
             return true;
 
         multiplier = simulator.State.GetPlayerCombatState(card.Preview.Owner)

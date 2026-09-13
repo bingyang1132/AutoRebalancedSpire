@@ -41,7 +41,7 @@ internal static class PlatingDecayPatch
 
     public static void Prefix(SimulatedCombatState __instance, Creature owner, ref bool decrementPlating)
     {
-        if (!RebalancedSpireSettingsStore.Settings.EternalArmor)
+        if (!AdapterSettings.Current.EternalArmor)
             return;
         if (owner.Player is null)
             return;

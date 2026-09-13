@@ -99,7 +99,7 @@ internal static class EncounterPowerMirrors
         PredictedCard card,
         int amount)
     {
-        if (amount <= 0 || !RebalancedSpireSettingsStore.Settings.Aeonglass)
+        if (amount <= 0 || !AdapterSettings.Current.Aeonglass)
             return;
         if (card.Preview.Type == CardType.Status)
             return;

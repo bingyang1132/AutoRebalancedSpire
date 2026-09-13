@@ -69,7 +69,7 @@ internal static class RelicStatefulMirrors
     /// <summary>把我们自己接管的遗物从求解器的回合开始名单里摘掉。</summary>
     public static void ParticipatingPostfix(List<RelicModel> __result)
     {
-        RebalancedSpireSettings settings = RebalancedSpireSettingsStore.Settings;
+        RebalancedSpireSettings settings = AdapterSettings.Current;
         __result.RemoveAll(relic => relic switch
         {
             DiamondDiadem => settings.DiamondDiadem,
@@ -81,7 +81,7 @@ internal static class RelicStatefulMirrors
     /// <summary>改版的海螺不再多抽牌（<c>ModifyHandDraw</c> 原样返回）。</summary>
     public static void HandDrawPostfix(RelicModel relic, ref decimal __result)
     {
-        if (relic is BoomingConch && RebalancedSpireSettingsStore.Settings.BoomingConch)
+        if (relic is BoomingConch && AdapterSettings.Current.BoomingConch)
             __result = 0m;
     }
 
@@ -97,7 +97,7 @@ internal static class RelicStatefulMirrors
         CombatSide side,
         IEnumerable<Creature> participants)
     {
-        if (side != CombatSide.Enemy || !RebalancedSpireSettingsStore.Settings.DiamondDiadem)
+        if (side != CombatSide.Enemy || !AdapterSettings.Current.DiamondDiadem)
             return;
         foreach (Creature creature in participants)
         {
@@ -120,7 +120,7 @@ internal static class RelicStatefulMirrors
         CombatPredictionSimulator simulator,
         IReadOnlyList<Creature> participants)
     {
-        if (!RebalancedSpireSettingsStore.Settings.DiamondDiadem)
+        if (!AdapterSettings.Current.DiamondDiadem)
             return;
         if (__instance is not ICombatPredictionEffectSink effects)
             return;
@@ -169,7 +169,7 @@ internal static class RelicStatefulMirrors
         decimal cost,
         ref decimal result)
     {
-        if (listener is not BoomingConch relic || !RebalancedSpireSettingsStore.Settings.BoomingConch)
+        if (listener is not BoomingConch relic || !AdapterSettings.Current.BoomingConch)
             return false;
         if (card.Preview.Owner != relic.Owner)
             return false;

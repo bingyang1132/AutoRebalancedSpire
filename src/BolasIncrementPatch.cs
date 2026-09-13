@@ -48,7 +48,7 @@ internal static class BolasIncrementPatch
     public static void Prefix(CombatPredictionSimulator simulator, Player player)
     {
         _pending = null;
-        if (!RebalancedSpireSettingsStore.Settings.Bolas)
+        if (!AdapterSettings.Current.Bolas)
             return;
 
         foreach (PredictedCard card in simulator.State.GetPlayerCombatState(player).AllCards)

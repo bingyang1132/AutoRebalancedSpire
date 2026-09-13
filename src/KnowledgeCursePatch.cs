@@ -40,7 +40,7 @@ internal static class KnowledgeCursePatch
     public static void Prefix(SimulatedCombatState combat, Creature source, Creature player)
     {
         _before = null;
-        if (!RebalancedSpireSettingsStore.Settings.KnowledgeDemon)
+        if (!AdapterSettings.Current.KnowledgeDemon)
             return;
         int counter = combat.GetKnowledgeDemonCurseCounter(source);
         if ((uint)counter >= (uint)DisintegrationAmounts.Length)

@@ -62,7 +62,7 @@ internal static class RelicMirrors
         bool setFreeThisTurn)
     {
         _ = setFreeThisTurn;
-        if (relic is not Crossbow || !RebalancedSpireSettingsStore.Settings.Crossbow)
+        if (relic is not Crossbow || !AdapterSettings.Current.Crossbow)
             return true;
 
         List<PredictedCard> generated = options
@@ -97,7 +97,7 @@ internal static class RelicMirrors
         string sourceId,
         IReadOnlyList<PredictedCard> options)
     {
-        if (!RebalancedSpireSettingsStore.Settings.ChoicesParadox)
+        if (!AdapterSettings.Current.ChoicesParadox)
             return;
         if (!string.Equals(sourceId, ChoicesParadoxId, StringComparison.Ordinal))
             return;

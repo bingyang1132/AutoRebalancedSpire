@@ -45,7 +45,7 @@ internal static class HistoryCoursePatch
 
     public static bool RecordPrefix(SimulatedCombatState __instance, PredictedCard card)
     {
-        if (!RebalancedSpireSettingsStore.Settings.WarHistorianRepy)
+        if (!AdapterSettings.Current.WarHistorianRepy)
             return true;
         if (Qualifies(card.Preview))
         {
@@ -66,7 +66,7 @@ internal static class HistoryCoursePatch
         Player player,
         ref PredictedCard? __result)
     {
-        if (!RebalancedSpireSettingsStore.Settings.WarHistorianRepy)
+        if (!AdapterSettings.Current.WarHistorianRepy)
             return true;
 
         if (__instance._rootMaterialized)

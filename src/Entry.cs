@@ -27,6 +27,10 @@ public static class Entry
     {
         _logger = RitsuLibFramework.CreateLogger(ModId);
 
+        // 开关的缓存要在任何补丁装上去之前建好：热路径上每读一次未缓存的开关
+        // 都会新建一个缓存对象并挂一个事件订阅，见 AdapterSettings 的说明。
+        AdapterSettings.Initialize();
+
         AdapterSelfCheck.Result check = AdapterSelfCheck.Run();
         if (!check.Ok)
         {
@@ -263,7 +267,7 @@ public static class Entry
     /// </remarks>
     private static void WarnAboutUnadaptedContent()
     {
-        if (!RebalancedSpireSettingsStore.Settings.Doormaker)
+        if (!AdapterSettings.Current.Doormaker)
             return;
         _logger?.Warn(
             "RebalancedSpire 的「门匠」Boss 当前是开着的，本适配层没有为它写模拟。"
