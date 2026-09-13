@@ -43,6 +43,14 @@ $ErrorActionPreference = "Stop"
 $runner = Join-Path $SolverRepo "tools\run-unattended-test.ps1"
 if (-not (Test-Path -LiteralPath $runner)) { throw "找不到 harness：$runner" }
 
+# harness 要求这三个环境变量，缺了会在每条用例里立刻失败。不先拦的话，跑出来的是
+# 「8 条全挂」，看上去像镜像写错了，实际只是沙箱路径没设 —— 第一次遇上白查了一轮。
+foreach ($requiredEnv in @("COMBATSOLVER_HEADLESS_ROOT", "COMBATSOLVER_HEADLESS_HOST_ROOT", "NUGET_PACKAGES")) {
+    if (-not (Get-Item -LiteralPath "env:$requiredEnv" -ErrorAction SilentlyContinue)) {
+        throw "环境变量 $requiredEnv 没设。三个都要设：COMBATSOLVER_HEADLESS_ROOT、COMBATSOLVER_HEADLESS_HOST_ROOT、NUGET_PACKAGES。"
+    }
+}
+
 # 和 AutoWatcher 那份同一个理由：harness 跑的是求解器仓库的构建产物，而适配层是照着游戏
 # mods/ 里那份编译的。两份不一样时适配层在 harness 里加载不上，每条用例都会以「不兼容」挂掉，
 # 跑完一小时只告诉你「全都没过」。开跑前先对一次内容哈希。
@@ -168,6 +176,47 @@ $cases = @(
         Args = @(
             "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("CorpseExplosion")),
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 必然结局+ 会在**每个回合开始**开一次「从抽牌堆挑几张放牌堆顶」的选择。
+        # 这条盯的不是某个数值，而是那条通道本身走不走得通：选择要能开出分支、
+        # 能被计划记下来、跨回合重放时顺序要对得上。任何一处抛异常这条就挂。
+        # 不清牌堆 —— 抽牌堆空了这一招就没有候选，通道根本不会被走到。
+        Id = "RS-FOREGONE-CONCLUSION-DRAW-TOP"
+        Character = "REGENT"
+        Tags = @("cards", "powers", "choices")
+        Why = "必然结局+：每回合开始从抽牌堆挑牌放堆顶，走求解器的选牌通道。"
+        Args = @(
+            "-EnemyCurrentHp", "60", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("ForegoneConclusion")),
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 周密计划+ 的选择开在**回合结束清手牌之前**，那个时点求解器原本一条钩子都不跑。
+        # 同样盯通道：挂在 RunPhaseOne 后面的那次挂起要能被上层当成搜索边界接住。
+        Id = "RS-WELL-LAID-PLANS-RETAIN"
+        Character = "SILENT"
+        Tags = @("cards", "powers", "choices")
+        Why = "周密计划+：回合结束前挑最多 N 张一次性保留。"
+        Args = @(
+            "-EnemyCurrentHp", "60", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("WellLaidPlans")),
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 无尽之刃+ 让手牌上限随手里的匕首数变。求解器的上限是建根时冻结的，
+        # 这条盯的是那份「按当前分支重算」的补丁在整条搜索里不会把上限算成负数或抛出来。
+        Id = "RS-INFINITE-BLADES-HAND-SIZE"
+        Character = "SILENT"
+        Tags = @("cards", "powers", "global")
+        Why = "无尽之刃+：手牌上限随手里的匕首数变，求解器原本冻结。"
+        Args = @(
+            "-EnemyCurrentHp", "60", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("InfiniteBlades")),
             "-ExpectedInitialUnmirroredCount", "0"
         )
     }

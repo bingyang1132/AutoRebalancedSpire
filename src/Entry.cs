@@ -48,6 +48,7 @@ public static class Entry
                 + NewCardMirrors.RegisterAll()
                 + EncounterPowerMirrors.RegisterAll()
                 + TaintedPlusMirrors.RegisterAll()
+                + MonsterReactionMirrors.RegisterAll()
                 + MirroredCards.ReplaceHooks();
         }
         catch (Exception ex)
@@ -76,6 +77,11 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 知识恶魔三选一里崩解的层数从 6/7/8 改成了 4/6/8。
+            harmony.Patch(
+                KnowledgeCursePatch.ResolveTarget(),
+                prefix: new HarmonyMethod(typeof(KnowledgeCursePatch), nameof(KnowledgeCursePatch.Prefix)),
+                postfix: new HarmonyMethod(typeof(KnowledgeCursePatch), nameof(KnowledgeCursePatch.Postfix)));
             // 寄生蛙精英死后生几只蠕虫由「寄生+」的层数决定，求解器认不出这个新 Power。
             harmony.Patch(
                 DeathSpawnPatch.ResolveSpawnsPrimaryTarget(),
