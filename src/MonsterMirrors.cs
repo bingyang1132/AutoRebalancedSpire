@@ -585,6 +585,97 @@ internal static class MonsterMirrors
                 return false;
             }
 
+            // ---------- 改版换过实现、但求解器那张表里本来就没有的九条 ----------
+            // 原版下这九条同样不模拟，所以严格说不算「回退」；补掉之后这几只怪在改版下
+            // 反而比原版算得准。放在最后是因为优先级最低，不是因为它们不重要。
+
+            // 斩击：攻击之外给自己 3 力量。
+            case ("BygoneEffigy", "SLASHES_MOVE") when settings.BygoneEffigy:
+                combat.Apply<StrengthPower>(owner, 3, owner);
+                __result = true;
+                return false;
+
+            // 增大打击：给玩家 2 层虚弱。
+            case ("Crusher", "ENLARGING_STRIKE_MOVE") when settings.KaiserCrab:
+                combat.ApplyFromMonster<WeakPower>(player, 2, owner);
+                __result = true;
+                return false;
+
+            // 瞄准镜：给玩家 2 层脆弱。
+            case ("Rocket", "TARGETING_RETICLE_MOVE") when settings.KaiserCrab:
+                combat.ApplyFromMonster<FrailPower>(player, 2, owner);
+                __result = true;
+                return false;
+
+            // 激光：打完之后自己掉 10 点（不可格挡、不吃增益）。
+            // 这一条是**静默**的 —— 它的意图只有攻击，求解器不会把它标成不支持，
+            // 但那 10 点自伤完全没算，火箭会显得比实际难杀。
+            case ("Rocket", "LASER_MOVE") when settings.KaiserCrab:
+                simulator.Damage(
+                    owner, 10, ValueProp.Unblockable | ValueProp.Unpowered, owner);
+                __result = true;
+                return false;
+
+            // 增厚：给自己 1 力量。
+            case ("DecimillipedeSegment", "BULK_MOVE") when settings.Decimillipede:
+                combat.Apply<StrengthPower>(owner, 1, owner);
+                __result = true;
+                return false;
+
+            // 疾冲：攻击之外给自己加甲。
+            case ("SkulkingColony", "ZOOM_MOVE") when settings.SkulkingColony:
+                simulator.GainBlock(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)8, 13, 10),
+                    ValueProp.Move);
+                __result = true;
+                return false;
+
+            // 魂焰 / 魂斩：两招打完都给自己一层虚无。
+            case ("SpectralKnight", "SOUL_FLAME") when settings.Knights:
+            case ("SpectralKnight", "SOUL_SLASH") when settings.Knights:
+                combat.Apply<IntangiblePower>(owner, 1, owner);
+                __result = true;
+                return false;
+
+            // 墨斑：给玩家虚弱，再给自己 2 层滑溜和 2 力量。
+            case ("Vantom", "INK_BLOT_MOVE") when settings.Vantom:
+                combat.ApplyFromMonster<WeakPower>(
+                    player,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 2, 1),
+                    owner);
+                if (simulator.HasPendingChoice)
+                    return false;
+                combat.Apply<SlipperyPower>(owner, 2, owner);
+                combat.Apply<StrengthPower>(owner, 2, owner);
+                __result = true;
+                return false;
+
+            // ---------- 只换了招式 id、实现还是原版的四条 ----------
+            // 改版把原版的一招拆成两招（或只是改了名），实现仍然是怪物自己那个方法。
+            // 求解器认 id 不认方法，所以原样照抄一份到新 id 上。
+
+            // 犁击：原版叫 PLOW_MOVE，改版拆成第一、第二次，实现没动。
+            case ("CeremonialBeast", "FIRST_PLOW_MOVE") when settings.CeremonialBeast:
+            case ("CeremonialBeast", "SECOND_PLOW_MOVE") when settings.CeremonialBeast:
+                combat.Apply<StrengthPower>(
+                    owner, combat.GetMonsterStaticInt(owner, "PlowStrength"), owner);
+                __result = true;
+                return false;
+
+            // 紧缚：攻击之外给玩家 1 层虚弱。求解器原版下也没有这一条。
+            case ("DecimillipedeSegment", "CONSTRICT_MOVE") when settings.Decimillipede:
+                combat.ApplyFromMonster<WeakPower>(player, 1, owner);
+                __result = true;
+                return false;
+
+            // 重接：求解器**已经**完整模拟了这一招（Apply 开头的 ResolveReviveMove 里认这个 id），
+            // 只是它没进 Supports 那张表，于是「治疗」这个意图被标成不支持。
+            // 这里什么都不做，只是把它从「未知招式」变成「已接管」。
+            case ("DecimillipedeSegment", "REATTACH_MOVE") when settings.Decimillipede:
+                __result = true;
+                return false;
+
             default:
                 return true;
         }

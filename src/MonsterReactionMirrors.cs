@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver;
@@ -18,9 +19,10 @@ namespace AutoRebalancedSpire;
 /// 这几条都走注册表，不登记的话会记一条未镜像风险（红字），不至于静默算错；
 /// 但那意味着这三场战斗每次都提示不可信。效果本身都不复杂，补掉更划算。
 ///
-/// <c>FabricatorPower.AfterDeath</c>（随从死了就插一次「组装」）**故意不做**：
-/// 它的条件里有 <c>IntendsToAttack</c>，读的是实机模型当前的意图，而分支里的意图是求解器
-/// 自己推的一套，两边对不上时插进去的那一招比不插更容易误导。这一条会继续以未镜像风险显示。
+/// 其中组装师那两条原本判成「做不了」，理由是它的条件里有 <c>IntendsToAttack</c>，读的是实机
+/// 模型当前的意图。这个判断是错的：<c>IntendsToAttack</c> 的定义就是「下一招的意图里有攻击或
+/// 致命一击」，而分支里那一招求解器自己也有（<c>CurrentMonsterMove</c>），照同一个定义算即可，
+/// 不需要去读实机。<c>CanFabricate</c>（同侧活着的不到 4 个）同理。
 /// </remarks>
 internal static class MonsterReactionMirrors
 {
@@ -28,8 +30,9 @@ internal static class MonsterReactionMirrors
     {
         AfterDamageReceivedMirrors.Registry.Register<PlowPlusPower>(PlowPlus);
         AfterCurrentHpChangedMirrors.Registry.Register<FabricatorPower>(FabricatorHpChanged);
+        AfterDeathMirrors.Registry.Register<FabricatorPower>(FabricatorDeath);
         AfterDeathMirrors.Registry.Register<MinionFakePower>(MinionFakeDeath);
-        return 3;
+        return 4;
     }
 
     /// <summary>耕耘+：祭祀之兽被打到剩血低于阈值时清空力量、眩晕一回合并换招。</summary>
@@ -84,11 +87,55 @@ internal static class MonsterReactionMirrors
             return;
 
         SimCreatureState state = context.State.GetCreature(power.Owner);
-        int spawnCost = (int)((float)state.MaxHp * (1f / 15f));
-        if (state.CurrentHp > 2 * spawnCost)
+        if (state.CurrentHp > 2 * SpawnBotCost(state))
             return;
         combat.ForceMonsterMove(power.Owner, "ESCAPE_MOVE");
     }
+
+    /// <summary>组装师：自己造的机器人被打死时，立刻改成再造一台。</summary>
+    /// <remarks>
+    /// 三个条件照实机抄：死的那只带「随从」、组装师自己血还够再造（同它的自伤判据）、
+    /// 同侧活着的不到 4 个、并且组装师这一招本来是要攻击的（只有要攻击的那一招才值得被打断）。
+    ///
+    /// <c>IntendsToAttack</c> 在实机里就是「下一招的意图里有攻击或致命一击」，
+    /// 分支里那一招求解器自己有，照同一个定义算，不去读实机模型。
+    ///
+    /// 不镜像的后果不是少算一点伤害，而是**清小怪的收益被算反**：求解器会以为打死机器人
+    /// 是纯赚，看不到它下一回合直接补一台、而且原本那一刀也不挨了。
+    /// </remarks>
+    private static void FabricatorDeath(FabricatorPower power, AfterDeathMirrorContext context)
+    {
+        if (context.WasRemovalPrevented || ReferenceEquals(context.Creature, power.Owner))
+            return;
+        if (power.Owner.Monster is not Fabricator)
+            return;
+        if (context.CombatState is not SimulatedCombatState combat)
+            return;
+        if (combat.GetAmount<MinionPower>(context.Creature) <= 0)
+            return;
+
+        SimCreatureState state = context.State.GetCreature(power.Owner);
+        if (state.CurrentHp <= 2 * SpawnBotCost(state))
+            return;
+
+        int aliveOnSide = combat.GetTeammatesOf(power.Owner)
+            .Count(candidate => context.State.GetCreature(candidate).IsAlive);
+        if (aliveOnSide >= 4)
+            return;
+        if (!IntendsToAttack(combat, power.Owner))
+            return;
+
+        combat.ForceMonsterMove(power.Owner, "FABRICATE_MOVE");
+    }
+
+    /// <summary>这只怪当前排的那一招里有没有攻击意图。和实机 <c>IntendsToAttack</c> 同一个定义。</summary>
+    private static bool IntendsToAttack(SimulatedCombatState combat, Creature creature)
+        => combat.CurrentMonsterMove(creature).Move.Intents
+            .Any(static intent => intent.IntentType is IntentType.Attack or IntentType.DeathBlow);
+
+    /// <summary>组装师每造一台机器人自伤的量：最大生命的 1/15。</summary>
+    private static int SpawnBotCost(SimCreatureState state)
+        => (int)((float)state.MaxHp * (1f / 15f));
 
     /// <summary>假随从：同伴全死光之后自己也跑。</summary>
     private static void MinionFakeDeath(MinionFakePower power, AfterDeathMirrorContext context)

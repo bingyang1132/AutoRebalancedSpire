@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Modding;
 using CombatSolver.Engine.Common.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using STS2RitsuLib;
+using RebalancedSpire.Core.Configs;
 
 namespace AutoRebalancedSpire;
 
@@ -77,6 +78,11 @@ public static class Entry
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
+            // 流星锤每次自己飞回手里伤害永久 +3；回手那一半求解器本来就模拟。
+            harmony.Patch(
+                BolasIncrementPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(typeof(BolasIncrementPatch), nameof(BolasIncrementPatch.Prefix)),
+                postfix: new HarmonyMethod(typeof(BolasIncrementPatch), nameof(BolasIncrementPatch.Postfix)));
             // 知识恶魔三选一里崩解的层数从 6/7/8 改成了 4/6/8。
             harmony.Patch(
                 KnowledgeCursePatch.ResolveTarget(),
@@ -213,5 +219,31 @@ public static class Entry
         _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌、"
             + $"{registeredPowers + AfterEnergyResetLateDispatch.HandlerCount} 个新 Power、"
             + $"{registeredOther} 处附魔与钩子的镜像。{check.Detail}");
+
+        WarnAboutUnadaptedContent();
+    }
+
+    /// <summary>本适配层覆盖不到的那部分内容，加载时提醒一次。</summary>
+    /// <remarks>
+    /// 门匠（Doormaker）是 RebalancedSpire 新加的第三章 Boss，不是对原版内容的改动，
+    /// 本适配层没有为它写模拟。它「关着」的时候会把自己的最大和当前生命都设成 999999999、
+    /// 用假血条挡住选中，开门时再把暂存的 Power 搬回来 —— 求解器没有「血条是假的」这个概念，
+    /// 要镜像得先在求解器里造一套生命遮罩机制，不是适配层能钉在外面的补丁。
+    ///
+    /// 求解器遇到它会把出招标成「不支持」（红字），不会给出看似可信的错路线，所以这不是安全
+    /// 问题，只是那一场用不了。建议在 RebalancedSpire 的设置里把「门匠」关掉：关掉之后那个
+    /// Boss 不进第三章的 Boss 池，连带的随机目标改写和「全能」也一起不生效，整块空白就没了。
+    ///
+    /// 这里只提醒，不替玩家改设置 —— 本 mod 声明了 <c>affects_gameplay: false</c>，
+    /// 自己去动别人的开关会让这句话变成假的。
+    /// </remarks>
+    private static void WarnAboutUnadaptedContent()
+    {
+        if (!RebalancedSpireSettingsStore.Settings.Doormaker)
+            return;
+        _logger?.Warn(
+            "RebalancedSpire 的「门匠」Boss 当前是开着的，本适配层没有为它写模拟。"
+            + "遇到那一场时求解器会把出招标成不支持（红字），不会给错路线，但那一场用不了。"
+            + "建议在 RebalancedSpire 的设置里关掉「Doormaker」。");
     }
 }

@@ -69,6 +69,17 @@ internal static class MoveCoveragePatch
             ("PhrogParasite", "PROLIFERATION_MOVE" or "PROLIFERATION_2_MOVE"
                 or "PROLIFERATION_3_MOVE" or "INFECT_2_MOVE") => settings.PhrogParasite,
             ("PunchConstruct", "FIGHT_WITH_ME") => settings.PunchOff,
+            // 下面九条原版下求解器也不支持，补掉之后改版反而比原版算得准。
+            ("BygoneEffigy", "SLASHES_MOVE") => settings.BygoneEffigy,
+            ("Crusher", "ENLARGING_STRIKE_MOVE") => settings.KaiserCrab,
+            ("Rocket", "TARGETING_RETICLE_MOVE" or "LASER_MOVE") => settings.KaiserCrab,
+            ("DecimillipedeSegment", "BULK_MOVE") => settings.Decimillipede,
+            ("SkulkingColony", "ZOOM_MOVE") => settings.SkulkingColony,
+            ("SpectralKnight", "SOUL_FLAME" or "SOUL_SLASH") => settings.Knights,
+            ("Vantom", "INK_BLOT_MOVE") => settings.Vantom,
+            // 只换了 id、实现还是原版的四条。
+            ("CeremonialBeast", "FIRST_PLOW_MOVE" or "SECOND_PLOW_MOVE") => settings.CeremonialBeast,
+            ("DecimillipedeSegment", "CONSTRICT_MOVE" or "REATTACH_MOVE") => settings.Decimillipede,
             _ => false,
         };
     }
