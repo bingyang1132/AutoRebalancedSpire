@@ -279,6 +279,39 @@
 
 这条同时也是问题包导不出来的原因 —— `ContinuationStamp` 走同一个分类器。
 
+## 第六个没有第三方入口的地方：怪物的条件分支
+
+玩家报「打组装师计算失败」。问题包里写得很直接：
+`KeyNotFoundException: The given key 'RAND' was not present in the dictionary`，
+出在 `BranchMonsterAi.Advance`。
+
+求解器在搜索里推进怪物行动时，**不会**去调用实机那个条件 `Func<bool>`（那要读实机模型，
+而搜索里的局面是假的）。它按 `(怪物类名, 分支 id)` 查一张写死的表，自己照原版的条件
+重算一遍，返回**招式 id 字符串**，调用方再拿去 `machine.States[id]`。
+
+改版整份替换了 45 个怪物的行动状态机，其中两个正好也在那张表里，而且表里那个 id
+在新机器里根本不存在：
+
+| 怪物 | 分支 | 求解器要找的 id | 改版里的实际去向 |
+|---|---|---|---|
+| 组装师 | `fabricateBranch` | `RAND`（随机节点） | 组装打击被删，分支直通组装或崩解 |
+| 活体护盾 | `SHIELD_SLAM_BRANCH` | `SHIELD_SLAM_MOVE` | 换成了 `SHIELD_UP_MOVE` |
+
+组装师那条连**条件本身**也换了：原版是「同侧活着的不到 4 个」，改版是
+「场上带随从的活怪不超过 2 只**并且**自己血够付两台机器人的代价（各 1/15 最大生命）」。
+补法见 `src/BranchConditionalPatch.cs`。
+
+**更隐蔽的一半**：如果 mod 只是把分支**改了名**，求解器那条写死的规则会默默不生效，
+回落到建根时抓的快照选择，不抛异常，而是整场按一个冻在第一回合的选择往下算。
+知识恶魔的分支在改版里就改名成了 `CurseOfKnowledgeBranch`，只是求解器那条恰好是按
+**招式 id** 而不是分支 id 拦的，躲过一劫。
+
+顺着这条把两个方向的 id 差都扫了一遍（之前只做了「改版新增」那个方向）：
+被删的招式 id 有 13 个、被删的分支节点有 8 个，除上面两个之外都只出现在求解器那些
+「按当前招式查」的表里 —— 查不到就是一条死分支，无害。
+剩下七条写死的条件分支逐个核过：试验体 `REVIVE_BRANCH` 两个目标 id 和条件都没变，
+其余六个怪（蛙骑士、卵直升机、拉加维林、沉睡甲虫、女王、碗虫岩）改版根本没动。
+
 ## 性能：开关**必须**自己缓存
 
 `RebalancedSpireSettingsStore.Settings` 这个属性每读一次都是
@@ -347,8 +380,12 @@ Harmony 补丁，就整个关掉监听者过滤；而平衡尖塔补了好几个
 
 ## 验收
 
-`tools/run-rebalanced-matrix.ps1` **十五条，2026-09-12 22:51 全部通过**（求解器 `06D43102`，
-适配层当日构建）。
+`tools/run-rebalanced-matrix.ps1` **十七条，2026-09-13 01:52 跑完 16/17**
+（求解器 `06D43102`，适配层当日构建）。
+
+挂的那条是 `RS-GLOW-STARS-DRAW`，但**不是镜像问题**：harness 自己写结果文件时
+`UnauthorizedAccessException`（`Writer.WriteResult` 那次原子改名被抢了，这台机器上装着火绒）。
+单独重跑通过。这种报错和断言失败长得不一样，看 `error` 里有没有 `WriteResult` 就能分。
 
 前八条盯单张牌和全局规则；第二轮加的三条盯**通道本身走不走得通**（必然结局+ 的回合开始选牌、
 周密计划+ 的回合结束选牌、无尽之刃+ 让手牌上限随分支变）；第四轮加的两条盯遗物：
@@ -359,9 +396,19 @@ Harmony 补丁，就整个关掉监听者过滤；而平衡尖塔补了好几个
   所以这条挂掉只可能是耳环那一段的问题。
 - `RS-HISTORY-COURSE-SKILL-REPLAY` 盯两处补完之后整条搜索不抛。
 
-最后两条盯的是「字符串字段分类」那个坑：一条直接注入 `TaintedPlusPower`，
-一条跑真实的感染棱柱精英战。**把 `StringFieldPolicyPatch` 摘掉之后这两条会超时失败** ——
-这个 A/B 做过了，否则「通过」什么都不证明：第一次跑的那个场景里根本没有出问题的那个 Power。
+第五轮加的两条盯「字符串字段分类」那个坑：一条直接注入 `TaintedPlusPower`，
+一条跑真实的感染棱柱精英战。**把 `StringFieldPolicyPatch` 摘掉之后这两条会超时失败**。
+
+第六轮加的两条盯怪物条件分支（组装师、活体护盾）。摘掉 `BranchConditionalPatch`
+之后这两条会以 `KeyNotFoundException`（`RAND` / `SHIELD_SLAM_MOVE`）失败。
+
+**这两轮的负对照都是必须做的，而且两次都救了场。**
+
+- 第五轮第一次「通过」什么都没证明：那个场景里根本没有出问题的那个 Power。
+- 第六轮第一次「通过」也什么都没证明，换了个原因：**harness 的 `-EnemyCurrentHp` 默认是 1**，
+  求解器第一回合就把组装师打死了，而条件分支只在**推进回合**时才走到。
+  跨回合的用例一定要给足血量，并且回头看结果里的 `searchedTurns` / `combatEndedTurn` ——
+  等于 1 就说明根本没跨过回合。
 
 跑之前三个环境变量都要设（`COMBATSOLVER_HEADLESS_ROOT`、`COMBATSOLVER_HEADLESS_HOST_ROOT`、
 `NUGET_PACKAGES`）。脚本开头会先拦一道：缺了的话之前跑出来是「全挂」，

@@ -280,6 +280,41 @@ $cases = @(
         Args = @(
             "-ExpectedInitialUnmirroredCount", "0"
         )
+    },
+    @{
+        # 求解器推进怪物行动时，条件分支走的是它自己写死的那张表，返回招式 id 再查
+        # machine.States[id]。改版把「组装打击」删了，分支不再通向随机节点 RAND，
+        # 机器里根本没有这个 id —— 一查就抛 KeyNotFoundException，整场算不出来。
+        #
+        # 这条得跑到第二回合：分支是第一回合结束、推进到下一回合时才走到的。
+        Id = "RS-FABRICATOR-BRANCH"
+        Encounter = "FABRICATOR_NORMAL"
+        Tags = @("monsters")
+        Why = "组装师的组装分支：原版那个 RAND 节点在改版里不存在。"
+        Args = @(
+            # 这三个参数是这条用例的全部重点。harness 的敌人血量默认是 **1**，
+            # 不改的话求解器第一回合就把组装师打死了，根本不会推进到下一回合——
+            # 而条件分支只在推进回合时才走到。第一版就是这么写的，
+            # 把补丁摘掉也照样「通过」，什么都没验到。
+            "-EnemyCurrentHp", "240", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("DEFEND_IRONCLAD")),
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 同一个坑的另一处：活体护盾有同伴时原版走 SHIELD_SLAM_MOVE，
+        # 改版换成了 SHIELD_UP_MOVE，那个 id 同样不存在。
+        # 这一场里炮台操作员是活着的同伴，所以分支必定走「有同伴」那一支。
+        Id = "RS-LIVING-SHIELD-BRANCH"
+        Encounter = "TURRET_OPERATOR_WEAK"
+        Tags = @("monsters")
+        Why = "活体护盾的同伴分支：原版那个 SHIELD_SLAM_MOVE 在改版里不存在。"
+        Args = @(
+            # 同上：必须让战斗活到第二回合，分支才会被走到。
+            "-EnemyCurrentHp", "90", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("DEFEND_IRONCLAD")),
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
     }
 )
 

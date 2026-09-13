@@ -75,6 +75,12 @@ public static class Entry
                 StringFieldPolicyPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(
                     typeof(StringFieldPolicyPatch), nameof(StringFieldPolicyPatch.Prefix)));
+            // 改版换掉了怪物的行动状态机，求解器那几条写死的条件分支指向了不存在的招式 id，
+            // 一查 States[id] 就抛 KeyNotFoundException，整场战斗算不出来。
+            harmony.Patch(
+                BranchConditionalPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(BranchConditionalPatch), nameof(BranchConditionalPatch.Prefix)));
             harmony.Patch(
                 AuditFilter.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(AuditFilter), nameof(AuditFilter.Prefix)));
