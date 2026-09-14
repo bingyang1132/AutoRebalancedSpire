@@ -45,7 +45,31 @@ internal static class MonsterMirrors
     public static int RegisterAll()
     {
         AfterDeathMirrors.Registry.Register<PingPongPower>(PingPong);
-        return 1;
+        AfterDeathMirrors.Registry.Register<HungerPower>(RemoveWhenApplierDies);
+        AfterDeathMirrors.Registry.Register<ScrutinyPower>(RemoveWhenApplierDies);
+        // 寄生+：它的 AfterDeath 会生小虫，但那份效果求解器是在**领域清理**那一关算的
+        // （DeathPowerSupport.Trigger，见 DeathSpawnPatch），和原版的寄生走同一条路。
+        // 这里登记成「已审阅、这个钩子本身不用再算一遍」，否则会记一条没镜像的死亡钩子，
+        // 求解器就不敢把打赢那条路线算完。原版的 InfestedPower 是被上游写死在
+        // PredictionCoverage 的白名单里放行的，第三方进不去那张表。
+        AfterDeathMirrors.Registry.RegisterIgnored<InfestedPlusPower>();
+        return 4;
+    }
+
+    /// <summary>饥饿 / 审视：施加者死了，病症跟着消失。</summary>
+    /// <remarks>
+    /// 效果本身不大，但**不登记的代价很大**：`AfterDeath` 这个名字里带 Death，
+    /// 求解器一旦在某条能打赢的路线上发现没镜像的死亡钩子，就把这条路线标成
+    /// <c>UnsupportedEffect</c> 边界、不敢往下算。表现出来是路线只有半个回合，
+    /// 打完就「计划用尽」重算一次。
+    /// </remarks>
+    private static void RemoveWhenApplierDies(PowerModel power, AfterDeathMirrorContext context)
+    {
+        if (context.WasRemovalPrevented || !ReferenceEquals(context.Creature, power.Applier))
+            return;
+        if (context.CombatState is not SimulatedCombatState combat)
+            return;
+        combat.SetPowerAmount(power, 0);
     }
 
     public static MethodInfo ResolveReviveTarget()
@@ -341,6 +365,14 @@ internal static class MonsterMirrors
 
             // 蓄势：改版同样只剩演出，原版是给自己 2 力量。
             case ("Vantom", "PREPARE_MOVE") when settings.Vantom:
+                __result = true;
+                return false;
+
+            // 连发炮击一 / 二：改版只剩那一炮。原版这两招除了伤害还各给自己 2 力量，
+            // 求解器照原版口径给，两回合下来就多出 4 点力量，一到实机就对不上、整局重算。
+            // 蓄能还是给 2 力量，那条没变。
+            case ("CubexConstruct", "REPEATER_BLAST_MOVE") when settings.CubexConstruct:
+            case ("CubexConstruct", "REPEATER_BLAST_MOVE_2") when settings.CubexConstruct:
                 __result = true;
                 return false;
 

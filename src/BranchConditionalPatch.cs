@@ -90,6 +90,20 @@ internal static class BranchConditionalPatch
             }
         }
 
+        // 亲族随从：改版给它加了一条条件分支，但**忘了把分支本身加进状态列表**。
+        // 于是 machine.States 里没有 "KinFollower"，求解器建根时抓不到这条分支的选择，
+        // 推进到它时就抛「没有根选择」—— 整场算不出来。这是 mod 那边的疏漏，
+        // 但后果落在求解器上，只能由我们兜住：照它那个 Func<bool> 的判据自己算。
+        if (settings.TheKin
+            && source.Monster is KinFollower
+            && branch.Id == "KinFollower")
+        {
+            __result = combat.GetMonsterBool(owner, "_startsWithDance")
+                ? "QUICK_SLASH_FAKE_MOVE"
+                : "QUICK_SLASH_MOVE";
+            return false;
+        }
+
         if (settings.TurretOperator
             && source.Monster is LivingShield
             && branch.Id == "SHIELD_SLAM_BRANCH")

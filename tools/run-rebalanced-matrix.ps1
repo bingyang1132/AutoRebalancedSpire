@@ -364,6 +364,47 @@ $cases = @(
             "-ExpectedUnexpectedReplansAtMost", "0",
             "-StopAfterExpectedReuse"
         )
+    },
+    @{
+        # 亲族随从：改版给它加了一条条件分支，但忘了把分支本身加进状态列表。
+        # machine.States 里没有 "KinFollower"，求解器建根时抄不到这条分支的选择，
+        # 推进到它时抛「没有根选择」—— 整场算不出来。
+        Id = "RS-KIN-FOLLOWER-BRANCH"
+        Encounter = "THE_KIN_BOSS"
+        Tags = @("monsters")
+        Why = "亲族随从的分支根本不在状态表里，整场算不出来。"
+        Args = @(
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 方块构造体：连发炮击一/二在改版里只剩那一炮，原版还各给自己 2 力量。
+        # 求解器照原版口径给，一回合就多 2 点力量，下一回合开头对不上。
+        # 招式顺序是蓄能 → 连发一 → 连发二 → 吐出，所以第三回合开头才能看出来。
+        Id = "RS-CUBEX-NO-REPLAN"
+        Encounter = "CUBEX_CONSTRUCT_NORMAL"
+        Tags = @("monsters")
+        Full = $true
+        Why = "方块构造体：连发炮击不再给力量，算多了就整局重算。"
+        Args = @(
+            "-EnemyCurrentHp", "120",
+            "-ExpectedReusedTurn", "3",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
+        # 寄生蛙精英：寄生+ 的 AfterDeath 没登记，求解器一发现能打赢的路线上
+        # 有没镜像的死亡钩子，就把路线标成 UnsupportedEffect 边界、不敢往下算，
+        # 路线只剩半个回合，打完就「计划用尽」重算。
+        Id = "RS-PHROG-DEATH-COVERAGE"
+        Encounter = "PHROG_PARASITE_ELITE"
+        Tags = @("monsters")
+        Why = "寄生+ 的死亡钩子没登记，打赢的路线会被截短。"
+        Args = @(
+            "-EnemyCurrentHp", "66",
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
     }
 )
 

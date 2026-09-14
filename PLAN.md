@@ -355,6 +355,35 @@
 `-ExpectedReusedTurn N` 只验到第 N−1 回合；而且要先确认那条路径真的被走到
 （组装师得用群伤牌，魂枢得让玩家全挡下来）。
 
+## 第八轮（实机 bug）：三份问题包，三种成因
+
+### 亲族 Boss：改版自己漏了一个状态
+
+`怪物 KIN_FOLLOWER 的条件分支 KinFollower 没有根选择` —— 整场算不出来。
+
+`KinFollowerPatch` 建了 `ConditionalBranchState("KinFollower")` 当机器的初始状态，
+但**没有把这个分支加进状态列表**。`machine.States` 里查不到它，求解器建根时抓不到这条分支
+的选择，推进到它就抛。这不是口径不一致，是对方写漏了；适配层照它那个 `Func<bool>`
+（`StartsWithDance`）自己算一份兜住。
+
+### 方块构造体：又一处「把效果清空」
+
+`1:STRENGTH_POWER expected 4 actual 2`。原版「连发炮击一 / 二」除了那一炮还各给自己 2 力量，
+改版只剩炮，蓄能那 2 点没动。求解器照原版口径给，两招下来多 2 点。
+
+### 寄生蛙精英：死亡钩子没登记，能打赢的路线被截断
+
+`寄生+` 重写了 `AfterDeath` 但没登记。求解器有一条特殊规则：只要**能打赢**的路线上有
+没镜像、方法名带 `Death` 的钩子，就把路线标成 `UnsupportedEffect` 边界不敢往下算。
+表现是路线只剩半个回合、打完就「计划用尽」重算。
+
+顺着把改版所有 `AfterDeath` 重写扫了一遍：7 个类型，之前只登记了 2 个（乒乓、尸爆）。
+补上饥饿、审视（施加者死了病症消失），寄生+ 登记成 `Ignored` —— 它的生怪效果在领域清理
+那一关已经算过了（和原版寄生同一条路）。
+
+原版的 `InfestedPower` 是被上游写死在 `PredictionCoverage` 白名单里放行的，
+**第三方进不去那张表，这是第七个封闭入口**。
+
 ## 性能：开关**必须**自己缓存
 
 `RebalancedSpireSettingsStore.Settings` 这个属性每读一次都是
