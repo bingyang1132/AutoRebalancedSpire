@@ -69,8 +69,18 @@ at CombatSolver.CombatRootSnapshot.Capture(CombatState state)
 at CombatSolver.SolverController.RequestSearch(...)
 ```
 
-**从哪一版开始坏的**：上游提交 `bce222b feat: register exact adapted OnPlay patch compositions`，
-`git describe` 是 `v0.36.3-2-gbce222b`，也就是 **0.36.4** 起。适配层的版本下限写的是 0.36.0，
+**从哪一版开始坏的**：上游提交 `bce222b feat: register exact adapted OnPlay patch compositions`。
+`git describe` 给的是 `v0.36.3-2-gbce222b`，但那只说明它是在 `v0.36.3` 之后写的，**不等于
+它进了 0.36.4**。逐个 tag 核过之后：`v0.36.4`/`v0.36.5`/`v0.37.0`/`v0.38.0`/`v0.38.1` 都**不含**
+这个提交，`v0.38.2` 才含（随 PR #87 合并发版，2026-09-14）。
+
+```
+v0.38.1  src/Prediction/PredictionModHookSubscriberCapture.cs:60  ValidateCardOnPlay(...)   ← 实机还在调
+v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里的测试
+```
+
+也就是说**是 2026-09-14 把本地从 0.38.1 跟到 0.38.6 这一步打断的**，不是积压很久的旧账。
+`git describe` 的输出不能当版本归属用，这一条记进教训。适配层的版本下限写的是 0.36.0，
 所以自检拦不住；`AuditFilter.ResolveTarget()` 找的那个方法名还在，自检也照样通过。
 这正是「方法还在、但没人调它了」这类漂移，按方法名做的自检抓不到。
 
@@ -121,16 +131,16 @@ at CombatSolver.SolverController.RequestSearch(...)
 
 | # | 怪物 / 招式 id | 改版实际做的 | 求解器照旧算的 | 放行 | 镜像 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `SpectralKnight` / `HEX` | 每个目标 1 层诅咒 + 自己 1 层虚无 | 每个目标 **2 层**诅咒，不给虚无 | n/a | **写成了 `HEX_MOVE`，死代码** |
-| 2 | `Aeonglass` / `EBB_MOVE` | 只打一下，**不再加甲** | 仍加 `EbbBlock` 点格挡 | n/a | 无 |
-| 3 | `Crusher` / `BUG_STING_MOVE` | 只打一下，**不再上虚弱脆弱** | 仍给玩家 2 虚弱 + 2 脆弱 | n/a | 无 |
-| 4 | `Entomancer` / `PHEROMONE_SPIT_MOVE` | 没蜂巢→只给 1 层蜂巢；<3→蜂巢 +2 且力量 +1；≥3→力量 +2 | 没蜂巢或 ≥3→力量 +2；否则蜂巢 +1、力量 +1 | n/a | 无 |
-| 5 | `SoulFysh` / `GAZE_MOVE` | 只打一下，**不再塞召唤牌** | 仍往弃牌堆塞 `GazeMoveAmount` 张 `Beckon` | n/a | 无 |
-| 6 | `VineShambler` / `GRASPING_VINES_MOVE` | 不打伤害了，缠绕 1 层 **外加自己加甲** | 只上缠绕，看不到那份格挡 | n/a | 无 |
-| 7 | `WaterfallGiant` / `RAM_MOVE` | 只打一下，**不再给蒸汽** | 仍给自己 3 层 `SteamEruptionPower` | n/a | 无 |
-| 8 | `WaterfallGiant` / `PRESSURE_GUN_MOVE` | 打一下并把自己的压力枪伤害累加，**不再给蒸汽** | 累加之外还给 3 层蒸汽 | n/a | 无 |
-| 9 | `LivingFog` / `BLOAT_MOVE` | 每只生出来的气弹上 1 层「乒乓」，并且 `BloatAmount` 每次 +1（上限 5） | 按建根时冻结的 `BloatAmount` 生气弹，不上乒乓、不递增 | n/a | 无 |
-| 10 | `TestSubject` / `BURNING_GROWL_MOVE` | 灼烧 4/3 张、力量 +2/+1（高难/普通） | 读原版字段：灼烧 **5/3** 张、力量 **+3/+2** | n/a | 无 |
+| 1 | `SpectralKnight` / `HEX` | 每个目标 1 层诅咒 + 自己 1 层虚无 | 每个目标 **2 层**诅咒，不给虚无 | n/a | ~~写成了 `HEX_MOVE`，死代码~~ **已修** |
+| 2 | `Aeonglass` / `EBB_MOVE` | 只打一下，**不再加甲** | 仍加 `EbbBlock` 点格挡 | n/a | **已修** |
+| 3 | `Crusher` / `BUG_STING_MOVE` | 只打一下，**不再上虚弱脆弱** | 仍给玩家 2 虚弱 + 2 脆弱 | n/a | **已修** |
+| 4 | `Entomancer` / `PHEROMONE_SPIT_MOVE` | 没蜂巢→只给 1 层蜂巢；<3→蜂巢 +2 且力量 +1；≥3→力量 +2 | 没蜂巢或 ≥3→力量 +2；否则蜂巢 +1、力量 +1 | n/a | **已修** |
+| 5 | `SoulFysh` / `GAZE_MOVE` | 只打一下，**不再塞召唤牌** | 仍往弃牌堆塞 `GazeMoveAmount` 张 `Beckon` | n/a | **已修** |
+| 6 | `VineShambler` / `GRASPING_VINES_MOVE` | 不打伤害了，缠绕 1 层 **外加自己加甲** | 只上缠绕，看不到那份格挡 | n/a | **已修** |
+| 7 | `WaterfallGiant` / `RAM_MOVE` | 只打一下，**不再给蒸汽** | 仍给自己 3 层 `SteamEruptionPower` | n/a | **已修** |
+| 8 | `WaterfallGiant` / `PRESSURE_GUN_MOVE` | 打一下并把自己的压力枪伤害累加，**不再给蒸汽** | 累加之外还给 3 层蒸汽 | n/a | **已修** |
+| 9 | `LivingFog` / `BLOAT_MOVE` | 每只生出来的气弹上 1 层「乒乓」，并且 `BloatAmount` 每次 +1（上限 5） | 按建根时冻结的 `BloatAmount` 生气弹，不上乒乓、不递增 | n/a | **乒乓已修（`BloatSpawnPatch`）；递增仍未补** |
+| 10 | `TestSubject` / `BURNING_GROWL_MOVE` | 灼烧 4/3 张、力量 +2/+1（高难/普通） | 读原版字段：灼烧 **5/3** 张、力量 **+3/+2** | n/a | **已修** |
 
 几条要说明的：
 
@@ -321,3 +331,56 @@ grep -rc "Could not decode" <scratchpad>/rs   # 必须全是 0
   `grep` 一遍**调用点**，确认实机路径真的会经过它，而不只是「方法还在」。
 - `git log --oneline <上一次核对的版本>..HEAD -- src/Prediction/ src/Engine/InCombat/Mirrors/`
   扫一遍，重点看有没有新的第三方登记入口（这次就是 `AdaptedCardOnPlayMirrors`）。
+
+
+---
+
+## 七、这一轮改了什么（2026-09-14 当晚）
+
+缺口 1（会拒绝整场战斗）已修：新增 `src/AdaptedOnPlayRegistrar.cs`，33 条登记语句一句没动，
+改的是它们登记到哪里——从普通镜像表加登记进上游 `AdaptedCardOnPlayMirrors`。删掉
+`src/AuditFilter.cs`。求解器版本下限抬到 `0.38.2`。
+验收 `RS-WELL-LAID-PLANS-RETAIN` 通过，反向对照做过（注掉那句登记立刻挂）。
+
+十条静默算错里补了九条，都在 `src/MonsterMirrors.cs`：`SpectralKnight/HEX`（改掉写错的
+招式 id）、`Aeonglass/EBB_MOVE`、`Crusher/BUG_STING_MOVE`、`Entomancer/PHEROMONE_SPIT_MOVE`、
+`SoulFysh/GAZE_MOVE`、`VineShambler/GRASPING_VINES_MOVE`、`WaterfallGiant/RAM_MOVE`、
+`WaterfallGiant/PRESSURE_GUN_MOVE`、`TestSubject/BURNING_GROWL_MOVE`。
+`LivingFog/BLOAT_MOVE` 的乒乓另开了 `src/BloatSpawnPatch.cs`（那一段在
+`ApplyBeforeAttack` 里，`MonsterMirrors` 的前缀够不着）。
+
+**还剩一条**：`LivingFog` 的 `BloatAmount` 每次 +1（上限 5）。求解器读的是建根时冻结的静态值，
+要模拟递增得有一份跟着搜索分支走的每怪计数，先确认第三方状态登记点在分支复制时的语义再写。
+方向是低估敌人。
+
+**核对基准**：以本文件为准，`docs/monster-move-audit.md` 里和这里冲突的结论作废
+（那份是脚本生成的，这次是逐句比的）。
+
+---
+
+## 八、迁移过程中撞出来的上游缺陷：战斗中生成的牌会让整条搜索炸掉
+
+改完之后跑全量矩阵，`RS-INFINITE-BLADES-HAND-SIZE` 挂了：
+
+```
+搜索动作回放失败：turn=2 action_count=5 kind=PlayCard card=SHIV
+  ---> PredictionUnsupportedException: Card type was not audited in this adapted OnPlay root.
+       at CombatSolver.AdaptedOnPlaySnapshot.TryInvoke(...)
+```
+
+上游那两半对不上：
+
+- 建根只审**建根时存在**的牌。`PredictionModHookSubscriberCapture.EnumerateAuditableCards`
+  枚举的是战斗牌堆 + 跑局牌库；`PredictionModPatchAudit.CaptureCardOnPlay` 的注释也明写了
+  「只在战斗中生成的牌类型在建根时看不到，这里不审」。
+- 但 `AdaptedOnPlaySnapshot.TryInvoke` 对**任何**不在那本表里的类型直接抛。
+
+结果：**只要存在任何一条适配登记**（也就是本适配层一加载），战斗里第一张生成牌被打出来就炸。
+刀刃、灼烧、伤口、虚无这类牌到处都是，所以这不是边角情况。
+
+本地的补法是 `src/AdaptedSnapshotFallbackPatch.cs`：类型不在审计表里时，**只在这张牌的
+`OnPlay` 上确实一个第三方补丁都没有**的前提下回退到普通镜像表；有第三方补丁仍然照上游抛。
+没有第三方补丁的话原版镜像本来就是对的，所以这条回退不放宽任何语义。
+
+**这一条应该回报上游**（他们自己也会撞上：任何第三方适配一旦用了这个入口就中招）。
+上游修好之后本地这个补丁可以撤掉。

@@ -81,6 +81,15 @@ public static class Entry
                 BranchConditionalPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(
                     typeof(BranchConditionalPatch), nameof(BranchConditionalPatch.Prefix)));
+            // 战斗中生成的牌不在建根审计表里，打出来会让整条搜索炸掉。给它们一条安全回退。
+            harmony.Patch(
+                AdaptedSnapshotFallbackPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(AdaptedSnapshotFallbackPatch), nameof(AdaptedSnapshotFallbackPatch.Prefix)));
+            // 迷雾的膨胀：召唤那半截在 ApplyBeforeAttack 里，MonsterMirrors 的前缀够不着。
+            harmony.Patch(
+                BloatSpawnPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(typeof(BloatSpawnPatch), nameof(BloatSpawnPatch.Prefix)));
             // 我们接管了 OnPlay 的牌，求解器那一层按原版语义写的「补偿」要一起关掉。
             harmony.Patch(
                 OnPlayCompensationPatch.ResolveTarget(),

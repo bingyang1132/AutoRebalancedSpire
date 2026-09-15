@@ -190,6 +190,20 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
+            // 冲撞：原版打一下之外给自己 3 层蒸汽；改版只剩那一下，蒸汽没了。
+            // 改版方法体（WaterfallGiantPatch.RamMove）只有一句 DamageCmd.Attack，
+            // 伤害本身走意图、自动跟随，所以这里什么都不做，只是把求解器那 3 层挡掉。
+            case ("WaterfallGiant", "RAM_MOVE") when settings.WaterfallGiant:
+                __result = true;
+                return false;
+
+            // 压力枪：原版打一下、把自己的压力枪伤害累加、再给自己 3 层蒸汽；改版去掉了蒸汽。
+            // 累加那一步要留着，不然多回合的计划会一直按第一回合的伤害推。
+            case ("WaterfallGiant", "PRESSURE_GUN_MOVE") when settings.WaterfallGiant:
+                combat.IncreasePressureGun(owner, combat.GetMonsterStaticInt(owner, "PressureGunIncrease"));
+                __result = true;
+                return false;
+
             // 加压：蒸汽从 3 层提到 9 层。
             case ("WaterfallGiant", "PRESSURE_UP_MOVE") when settings.WaterfallGiant:
                 combat.Apply<SteamEruptionPower>(owner, 9, owner);
@@ -198,6 +212,12 @@ internal static class MonsterMirrors
 
             // 渐强：原版是「把手上的枯萎升一级再塞几张新的」，改版把那套挪到了凋零那一招，
             // 这一招换成给自己力量和 33 点格挡。
+            // 退潮：原版打一下之外给自己加甲；改版只剩那一下。
+            // 改版方法体（AeonglassPatch.EbbMove）只有一句 DamageCmd.Attack。
+            case ("Aeonglass", "EBB_MOVE") when settings.Aeonglass:
+                __result = true;
+                return false;
+
             case ("Aeonglass", "INCREASING_INTENSITY_MOVE") when settings.Aeonglass:
             {
                 int intensity = TryStatic(combat, owner, "IncreasingIntensityTotalStrength");
@@ -211,7 +231,11 @@ internal static class MonsterMirrors
             }
 
             // 咒缚：原版 2 层诅咒；改版每个目标 1 层，外加自己一层虚无。
-            case ("SpectralKnight", "HEX_MOVE") when settings.Knights:
+            // 招式 id 是 "HEX" 不是 "HEX_MOVE"。原来写错成后者，这一段从来没被命中过，
+            // 求解器一直按原版的 2 层诅咒算、也不给虚无。原版出招表
+            // （SpectralKnight.GenerateMoveStateMachine 里 new MoveState("HEX", ...)）
+            // 和求解器的 MonsterMoveEffects 两边都是 "HEX"。
+            case ("SpectralKnight", "HEX") when settings.Knights:
                 combat.ApplyFromMonster<HexPower>(player, 1, owner);
                 combat.Apply<IntangiblePower>(owner, 1, owner);
                 __result = true;
@@ -349,7 +373,71 @@ internal static class MonsterMirrors
                     combat.SetPowerAmount(pingPong, 0);
                 return true;
 
+            // 信息素喷吐：改版把三个分支全改了。
+            //   没有蜂巢       → 蜂巢 +1（原版是力量 +2）
+            //   蜂巢层数 < 3   → 蜂巢 +2、力量 +1（原版是蜂巢 +1、力量 +1）
+            //   蜂巢层数 >= 3  → 力量 +2（和原版一样）
+            // 读的是「当下有没有蜂巢」，所以必须按顺序判，不能合并。
+            case ("Entomancer", "PHEROMONE_SPIT_MOVE") when settings.Entomancer:
+            {
+                PersonalHivePower? hive = combat.GetPower<PersonalHivePower>(owner);
+                if (hive == null)
+                {
+                    combat.Apply<PersonalHivePower>(owner, 1, owner);
+                }
+                else if (hive.Amount < 3)
+                {
+                    combat.Apply<PersonalHivePower>(owner, 2, owner);
+                    combat.Apply<StrengthPower>(owner, 1, owner);
+                }
+                else
+                {
+                    combat.Apply<StrengthPower>(owner, 2, owner);
+                }
+                __result = true;
+                return false;
+            }
+
+            // 缠绕藤蔓：原版只上 1 层缠绕；改版在那之外给自己加甲 8（九阶 9）。
+            // 改版把意图换成了 DefendIntent + CardDebuffIntent，格挡量不在意图里，
+            // 所以求解器看不到这份格挡，必须在这里补。
+            case ("VineShambler", "GRASPING_VINES_MOVE") when settings.VineShambler:
+                combat.ApplyFromMonster<TangledPower>(player, 1, owner);
+                simulator.GainBlock(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 9, 8),
+                    ValueProp.Move);
+                __result = true;
+                return false;
+
+            // 凝视：原版打一下之外往弃牌堆塞 GazeMoveAmount 张「召唤」；改版只剩那一下。
+            // 改版方法体（SoulFyshPatch.GazeMove）只有一句 DamageCmd.Attack。
+            case ("SoulFysh", "GAZE_MOVE") when settings.SoulFysh:
+                __result = true;
+                return false;
+
             // ---------- 改版新加的招式：求解器那张表里没有，不补就会被标成「不支持」 ----------
+
+            // 灼热咆哮：改版把张数和力量都调低了，而且调的是补丁类自己的常量，
+            // 求解器读的是原版怪物身上的 BurningGrowlBurnCount / BurningGrowlStrengthGain
+            // 那两个字段——它们没被补丁动过，所以这一条不会自动跟随。
+            //   灼烧张数：原版 5/3（九阶/普通），改版 4/3
+            //   力量层数：原版 3/2，改版 2/1
+            // 张数会进意图（StatusIntent），所以不会有红字提示，但塞进弃牌堆的张数是错的。
+            case ("TestSubject", "BURNING_GROWL_MOVE") when settings.TestSubject:
+                simulator.AddToCombat<Burn>(
+                    player,
+                    PileType.Discard,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 4, 3),
+                    null);
+                if (simulator.HasPendingChoice)
+                    return false;
+                combat.Apply<StrengthPower>(
+                    owner,
+                    AscensionHelper.GetValueIfAscension((AscensionLevel)9, 2, 1),
+                    owner);
+                __result = true;
+                return false;
 
             // 咆哮：给自己 3 层狂怒。
             case ("TestSubject", "GROWL_MOVE") when settings.TestSubject:
@@ -634,6 +722,12 @@ internal static class MonsterMirrors
                 return false;
 
             // 增大打击：给玩家 2 层虚弱。
+            // 虫刺：原版多段打完还给玩家 2 虚弱 + 2 脆弱；改版只剩那几下。
+            // 改版方法体（CrusherPatch.BugStingMove）只有一句多段 DamageCmd.Attack。
+            case ("Crusher", "BUG_STING_MOVE") when settings.KaiserCrab:
+                __result = true;
+                return false;
+
             case ("Crusher", "ENLARGING_STRIKE_MOVE") when settings.KaiserCrab:
                 combat.ApplyFromMonster<WeakPower>(player, 2, owner);
                 __result = true;

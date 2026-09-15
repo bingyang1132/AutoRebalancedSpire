@@ -64,6 +64,8 @@ internal static class AdapterSelfCheck
             _ = ExtraTurnPatch.ResolveConsumeTarget();
             _ = StringFieldPolicyPatch.ResolveTarget();
             _ = BranchConditionalPatch.ResolveTarget();
+            _ = BloatSpawnPatch.ResolveTarget();
+            _ = AdaptedSnapshotFallbackPatch.ResolveTarget();
         }
         catch (MissingMethodException ex)
         {
@@ -82,6 +84,9 @@ internal static class AdapterSelfCheck
         if (RegistryOverride.Probe(CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay.CardOnPlayMirrors.Registry)
             is { } probeError)
             return new Result(false, probeError);
+
+        if (AdaptedSnapshotFallbackPatch.Probe() is { } snapshotError)
+            return new Result(false, snapshotError);
 
         if (ValidateMirroredCards() is { } cardError)
             return new Result(false, cardError);

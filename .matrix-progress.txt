@@ -1,4 +1,2 @@
 
-20:55:22 开始 共 1 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
-20:56:18 [1/1] RS-WELL-LAID-PLANS-RETAIN 通过
-20:56:18 结束 通过 1/1 未通过 0 未运行 0
+21:23:15 开始 共 22 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
