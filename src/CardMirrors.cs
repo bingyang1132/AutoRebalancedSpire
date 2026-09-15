@@ -190,12 +190,24 @@ internal static class CardMirrors
         V.PlayerChoice(context, "手上功夫从手牌里挑一张加狡诈");
     }
 
-    /// <summary>藏匿匕首：弃掉选中的几张，然后造若干带「充能」附魔的匕首进手牌。</summary>
-    /// <remarks>弃牌是玩家选的，求解器没开这个分支；造匕首这半是确定的，照常结算。</remarks>
+    /// <summary>藏匿匕首：这里什么都不做，两段效果都由求解器的选择通道负责。</summary>
+    /// <remarks>
+    /// 这张牌的效果被一个玩家选择劈成两段：先从手牌选几张弃掉，<b>选完之后</b>才造匕首。
+    /// 求解器本来就把这两段分开处理——弃牌走 <c>CardChoiceSupport.GetSpec</c> 开成搜索分支
+    /// （张数读的是活的 <c>Cards</c> 变量，改版改成 3、升级 −1 会自动跟随），
+    /// 造匕首走 <c>CardChoiceSupport.ApplyPostChoiceEffects</c>。
+    ///
+    /// <para>所以这里**一定不能**自己造匕首。原来那版在出牌那一刻就造了，顺序是反的：
+    /// 模拟里手牌提前多出两张匕首，求解器于是计划「把匕首弃掉」，而实机弹弃牌页面时匕首
+    /// 还没造出来，部署时报「原生选牌页面找不到 SHIV」，整场操作不了。</para>
+    ///
+    /// <para>改版和原版唯一的实际差别是匕首挂「充能」而不是随本牌升级，那一处在
+    /// <see cref="HiddenDaggersShivPatch" /> 里补。</para>
+    /// </remarks>
     private static void HiddenDaggers(HiddenDaggers card, CardOnPlayMirrorContext context)
     {
-        V.PlayerChoice(context, "藏匿匕首要弃掉几张手牌");
-        V.ShivsInHand(context, V.VarInt(card, "Shivs"), CanonicalModels.Enchantment<Energetic>());
+        _ = card;
+        _ = context;
     }
 
     /// <summary>无尽之刃：上一层「无尽之刃+」，并把牌上的张数加进那层的张数变量。</summary>

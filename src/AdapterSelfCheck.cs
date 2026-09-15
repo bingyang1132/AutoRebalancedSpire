@@ -66,6 +66,7 @@ internal static class AdapterSelfCheck
             _ = BranchConditionalPatch.ResolveTarget();
             _ = BloatSpawnPatch.ResolveTarget();
             _ = AdaptedSnapshotFallbackPatch.ResolveTarget();
+            _ = HiddenDaggersShivPatch.ResolveTarget();
         }
         catch (MissingMethodException ex)
         {

@@ -81,6 +81,11 @@ public static class Entry
                 BranchConditionalPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(
                     typeof(BranchConditionalPatch), nameof(BranchConditionalPatch.Prefix)));
+            // 藏匿匕首造出来的匕首要挂「充能」，而不是随本牌升级。那一段在选择结算之后跑。
+            harmony.Patch(
+                HiddenDaggersShivPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(HiddenDaggersShivPatch), nameof(HiddenDaggersShivPatch.Prefix)));
             // 战斗中生成的牌不在建根审计表里，打出来会让整条搜索炸掉。给它们一条安全回退。
             harmony.Patch(
                 AdaptedSnapshotFallbackPatch.ResolveTarget(),
