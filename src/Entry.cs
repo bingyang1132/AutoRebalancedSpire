@@ -81,9 +81,6 @@ public static class Entry
                 BranchConditionalPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(
                     typeof(BranchConditionalPatch), nameof(BranchConditionalPatch.Prefix)));
-            harmony.Patch(
-                AuditFilter.ResolveTarget(),
-                prefix: new HarmonyMethod(typeof(AuditFilter), nameof(AuditFilter.Prefix)));
             // 我们接管了 OnPlay 的牌，求解器那一层按原版语义写的「补偿」要一起关掉。
             harmony.Patch(
                 OnPlayCompensationPatch.ResolveTarget(),
@@ -260,6 +257,15 @@ public static class Entry
         _logger.Info($"已注册 {registered} 张 RebalancedSpire 改动牌、"
             + $"{registeredPowers + AfterEnergyResetLateDispatch.HandlerCount} 个新 Power、"
             + $"{registeredOther} 处附魔与钩子的镜像。{check.Detail}");
+        if (MirroredCards.LastRegistrar is { } registrar)
+        {
+            // 进了适配入口的才不会让求解器拒绝整场战斗，所以这个数要单独报，
+            // 而且要和上一行的张数对得上。
+            _logger.Info($"其中 {registrar.Adapted.Count} 张登记进了求解器的 OnPlay 适配入口，"
+                + $"补丁组合指纹 {registrar.Fingerprint()}。");
+            foreach (string rejected in registrar.Rejected)
+                _logger.Error($"没有登记适配入口，这张牌会让求解器拒绝整场战斗：{rejected}");
+        }
 
         WarnAboutUnadaptedContent();
     }

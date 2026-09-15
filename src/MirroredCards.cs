@@ -13,12 +13,12 @@ namespace AutoRebalancedSpire;
 internal sealed record MirroredCard(
     Type CardType,
     Func<RebalancedSpireSettings, bool> Toggle,
-    Action<MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>> Register,
+    Action<IOnPlayRegistrar> Register,
     bool ReplacesBuiltIn = false)
 {
     public static MirroredCard For<TCard>(
         Func<RebalancedSpireSettings, bool> toggle,
-        Action<MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>> register,
+        Action<IOnPlayRegistrar> register,
         bool replacesBuiltIn = false)
         where TCard : CardModel
         => new(typeof(TCard), toggle, register, replacesBuiltIn);
@@ -45,8 +45,13 @@ internal static class MirroredCards
 
     public static IReadOnlyCollection<Type> ActiveTypes { get; private set; } = [];
 
+    /// <summary>登记这一轮的结果，给 Entry 打日志用。</summary>
+    public static AdaptedOnPlayRegistrar? LastRegistrar { get; private set; }
+
     public static int RegisterAll(MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> registry)
     {
+        var registrar = new AdaptedOnPlayRegistrar(registry);
+        LastRegistrar = registrar;
         RebalancedSpireSettings settings = AdapterSettings.Current;
         foreach (MirroredCard card in CardMirrors.All())
         {
@@ -58,7 +63,7 @@ internal static class MirroredCards
                     $"{card.CardType.Name}：求解器"
                     + (dropped ? "登记了" : "没有登记")
                     + "自己的 OnPlay 镜像，和本适配层记的相反。上游的镜像表变了，要重新核对。");
-            card.Register(registry);
+            card.Register(registrar);
             Active.Add(card);
         }
         ActiveTypes = Active.Select(card => card.CardType).ToHashSet();

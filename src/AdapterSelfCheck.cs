@@ -34,11 +34,11 @@ internal static class AdapterSelfCheck
 
         try
         {
-            _ = AuditFilter.ResolveTarget();
+            _ = AdaptedOnPlayRegistrar.ResolveRegisterTarget();
         }
         catch (MissingMethodException ex)
         {
-            return new Result(false, $"求解器缺少建根时的牌组审查入口：{ex.Message}。");
+            return new Result(false, $"求解器缺少 OnPlay 的第三方适配入口：{ex.Message}。");
         }
 
         try
