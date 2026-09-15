@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.5.1">
+﻿<Project Sdk="Godot.NET.Sdk/4.5.1">
   <Import Project="./local.props" Condition="Exists('./local.props')" />
 
   <PropertyGroup>
@@ -19,7 +19,13 @@
     <Sts2DataDir Condition="'$(Sts2DataDir)' == '' and '$(OS)' == 'Windows_NT'">$(Sts2Dir)/data_sts2_windows_x86_64</Sts2DataDir>
     <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Dir)/data_sts2_linuxbsd_x86_64</Sts2DataDir>
     <WorkshopDir Condition="'$(WorkshopDir)' == ''">$(SteamRoot)/steamapps/workshop/content/2868840</WorkshopDir>
-    <RitsuLibDir Condition="'$(RitsuLibDir)' == ''">$(WorkshopDir)/3747602295/lib/0.111.0</RitsuLibDir>
+    <RitsuWorkshopRoot Condition="'$(RitsuWorkshopRoot)' == ''">$(WorkshopDir)/3747602295</RitsuWorkshopRoot>
+    <RitsuLibDir Condition="'$(RitsuLibDir)' == ''">$(RitsuWorkshopRoot)/lib/0.111.0</RitsuLibDir>
+    <!-- RitsuLib 0.6.0 起，包自带 RitsuLib.References.props，DLL 拆成 compat/<游戏API版本>/ + shared/。
+         包里有四个 compat 目录，props 的自动挑选分支不会触发，必须显式给出目标版本。
+         props 不存在就退回 0.5.x 的单 DLL 布局。 -->
+    <RitsuLibReferenceTarget Condition="'$(RitsuLibReferenceTarget)' == ''">0.111.0</RitsuLibReferenceTarget>
+    <RitsuLibReferencesProps>$(RitsuWorkshopRoot)/RitsuLib.References.props</RitsuLibReferencesProps>
 
     <!-- 钉死的依赖。两者都从游戏 mods 目录读，不把别人的二进制放进本仓库。
          RebalancedSpire 原本在 workshop 目录（3747498062），已整份拷进 mods/ 钉住版本：
@@ -40,18 +46,21 @@
     <Publicize Include="RebalancedSpire" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
   </ItemGroup>
 
+  <Import Project="$(RitsuLibReferencesProps)" Condition="Exists('$(RitsuLibReferencesProps)')" />
+
   <ItemGroup>
     <Reference Include="sts2" HintPath="$(Sts2DataDir)/sts2.dll" Private="false" />
     <Reference Include="0Harmony" HintPath="$(Sts2DataDir)/0Harmony.dll" Private="false" />
     <Reference Include="GodotSharp" HintPath="$(Sts2DataDir)/GodotSharp.dll" Private="false" />
-    <Reference Include="STS2-RitsuLib" HintPath="$(RitsuLibDir)/STS2-RitsuLib.dll" Private="false" />
+    <Reference Include="STS2-RitsuLib" HintPath="$(RitsuLibDir)/STS2-RitsuLib.dll" Private="false"
+               Condition="!Exists('$(RitsuLibReferencesProps)')" />
     <Reference Include="CombatSolver" HintPath="$(CombatSolverDir)/CombatSolver.dll" Private="false" />
     <Reference Include="RebalancedSpire" HintPath="$(RebalancedSpireDir)/RebalancedSpire.dll" Private="false" />
   </ItemGroup>
 
   <Target Name="ValidatePinnedDependencies" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(Sts2DataDir)/sts2.dll')" Text="找不到 $(Sts2DataDir)/sts2.dll。请检查 SteamRoot 或 local.props。" />
-    <Error Condition="!Exists('$(RitsuLibDir)/STS2-RitsuLib.dll')" Text="找不到当前游戏版本的 RitsuLib。请检查 SteamRoot 或 local.props。" />
+    <Error Condition="!Exists('$(RitsuLibReferencesProps)') and !Exists('$(RitsuLibDir)/STS2-RitsuLib.dll')" Text="找不到当前游戏版本的 RitsuLib。请检查 SteamRoot、RitsuWorkshopRoot 或 local.props。" />
     <Error Condition="!Exists('$(CombatSolverDir)/CombatSolver.dll')" Text="找不到 $(CombatSolverDir)/CombatSolver.dll。请先构建并部署 CombatSolver。" />
     <Error Condition="!Exists('$(RebalancedSpireDir)/RebalancedSpire.dll')" Text="找不到 $(RebalancedSpireDir)/RebalancedSpire.dll。请把 RebalancedSpire 整份拷进游戏 mods 目录（原始出处是 Workshop 3747498062）。" />
   </Target>
