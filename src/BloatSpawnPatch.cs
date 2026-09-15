@@ -3,6 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using CombatSolver;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 using RebalancedSpire.Core.Configs;
 using RebalancedSpire.Core.Powers;
@@ -21,20 +22,37 @@ namespace AutoRebalancedSpire;
 /// <list type="number">
 ///   <item>每只生出来的气弹上 1 层 <c>PingPongPower</c>。少算这一层，求解器会以为打气弹不要钱，
 ///     实际打一下自己要挨一下。</item>
-///   <item><c>BloatAmount</c> 每用一次 +1，上限 5。<b>这一条这里没有补</b>，见下。</item>
+///   <item><c>BloatAmount</c> 每用一次 +1，上限 5。求解器读的是建根时冻结的静态值
+///     （<c>combat.GetMonsterStaticInt</c>），一场战斗内不变，多回合的计划会越推越少算。</item>
 /// </list>
 ///
-/// <para><b>为什么第二条没补。</b>求解器读的是建根时冻结的静态值
-/// （<c>combat.GetMonsterStaticInt(owner, "BloatAmount")</c>），一场战斗内不变。要模拟递增
-/// 得有一份**跟着搜索分支走**的每怪计数——同一条时间线上第三次膨胀比第一次多生两只，而不同
-/// 分支的次数还不一样。求解器给第三方的状态登记点是按模型挂的（见
-/// <c>WhisperingEarringPatch.RegisterState</c>），拿来挂怪物的招式计数要先确认它在分支复制时
-/// 的语义，没确认之前不写。结果是多回合计划里气弹会越推越少算，方向是低估敌人，
-/// 记在 docs/coverage-gaps.md 里。</para>
+/// <para><b>递增怎么模拟的。</b>计数挂在 <c>simulator.StateStore</c> 上、按怪物模型索引。
+/// 那个存储的条目实现 <c>IPredictionStateForkable</c>，**搜索分叉时跟着分支各复制一份**，
+/// 所以「这条时间线上已经膨胀过几次」在不同分支里互不干扰——这正是需要的语义。
+/// 求解器给第三方的模型状态登记点（<c>ModelPredictionStateMirrors</c>）只对遗物和修饰器开放，
+/// 怪物模型根本不会被 <c>CaptureRootState</c> 捕获，所以走不了那条路，直接用存储。</para>
+///
+/// <para>第 k 次膨胀生的气弹数是 <c>min(建根时的 BloatAmount + (k-1), 5)</c>，
+/// 和改版那句 <c>BloatAmount = Math.Min(BloatAmount + 1, 5)</c> 对得上。</para>
 /// </remarks>
 internal static class BloatSpawnPatch
 {
     private const string TargetName = nameof(MonsterMoveEffects.ApplyBeforeAttack);
+
+    /// <summary>改版里的上限，见 <c>LivingFogPatch.MaxGasBombs</c>。</summary>
+    private const int MaxGasBombs = 5;
+
+    /// <summary>这条时间线上「膨胀」已经用过几次。分叉时跟着分支各复制一份。</summary>
+    private sealed class BloatState : IPredictionStateForkable
+    {
+        public int Uses { get; set; }
+
+        public object Fork(PredictionForkContext context)
+        {
+            _ = context;
+            return MemberwiseClone();
+        }
+    }
 
     public static MethodInfo ResolveTarget()
         => AccessTools.Method(typeof(MonsterMoveEffects), TargetName)
@@ -52,7 +70,9 @@ internal static class BloatSpawnPatch
         if (!AdapterSettings.Current.LivingFog)
             return true;
 
-        int count = combat.GetMonsterStaticInt(move.Owner, "BloatAmount");
+        BloatState state = simulator.StateStore.Get<BloatState>(move.Owner.Monster!);
+        int count = Math.Min(combat.GetMonsterStaticInt(move.Owner, "BloatAmount") + state.Uses, MaxGasBombs);
+        state.Uses++;
         for (int index = 0; index < count; index++)
         {
             string? slot = MonsterSpawnSupport.NextSlot(combat);

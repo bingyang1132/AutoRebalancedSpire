@@ -139,7 +139,7 @@ v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里
 | 6 | `VineShambler` / `GRASPING_VINES_MOVE` | 不打伤害了，缠绕 1 层 **外加自己加甲** | 只上缠绕，看不到那份格挡 | n/a | **已修** |
 | 7 | `WaterfallGiant` / `RAM_MOVE` | 只打一下，**不再给蒸汽** | 仍给自己 3 层 `SteamEruptionPower` | n/a | **已修** |
 | 8 | `WaterfallGiant` / `PRESSURE_GUN_MOVE` | 打一下并把自己的压力枪伤害累加，**不再给蒸汽** | 累加之外还给 3 层蒸汽 | n/a | **已修** |
-| 9 | `LivingFog` / `BLOAT_MOVE` | 每只生出来的气弹上 1 层「乒乓」，并且 `BloatAmount` 每次 +1（上限 5） | 按建根时冻结的 `BloatAmount` 生气弹，不上乒乓、不递增 | n/a | **乒乓已修（`BloatSpawnPatch`）；递增仍未补** |
+| 9 | `LivingFog` / `BLOAT_MOVE` | 每只生出来的气弹上 1 层「乒乓」，并且 `BloatAmount` 每次 +1（上限 5） | 按建根时冻结的 `BloatAmount` 生气弹，不上乒乓、不递增 | n/a | **已修（`BloatSpawnPatch`，乒乓 + 递增）** |
 | 10 | `TestSubject` / `BURNING_GROWL_MOVE` | 灼烧 4/3 张、力量 +2/+1（高难/普通） | 读原版字段：灼烧 **5/3** 张、力量 **+3/+2** | n/a | **已修** |
 
 几条要说明的：
@@ -349,9 +349,11 @@ grep -rc "Could not decode" <scratchpad>/rs   # 必须全是 0
 `LivingFog/BLOAT_MOVE` 的乒乓另开了 `src/BloatSpawnPatch.cs`（那一段在
 `ApplyBeforeAttack` 里，`MonsterMirrors` 的前缀够不着）。
 
-**还剩一条**：`LivingFog` 的 `BloatAmount` 每次 +1（上限 5）。求解器读的是建根时冻结的静态值，
-要模拟递增得有一份跟着搜索分支走的每怪计数，先确认第三方状态登记点在分支复制时的语义再写。
-方向是低估敌人。
+**十条静默算错现在全部补完。** `LivingFog` 的 `BloatAmount` 递增最后也做了：计数挂在
+`simulator.StateStore` 上、按怪物模型索引。那个存储的条目实现 `IPredictionStateForkable`，
+搜索分叉时跟着分支各复制一份，正是需要的语义。走不了 `ModelPredictionStateMirrors` 那条
+登记点——它只对遗物和修饰器开放（`CaptureRootState` 只在 `SimulatedCombatState` 里对
+`_rootRelicSources` 和 `_modifiers` 调），怪物模型根本不会被捕获。
 
 **核对基准**：以本文件为准，`docs/monster-move-audit.md` 里和这里冲突的结论作废
 （那份是脚本生成的，这次是逐句比的）。

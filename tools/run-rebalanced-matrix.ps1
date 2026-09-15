@@ -208,6 +208,33 @@ $cases = @(
         )
     },
     @{
+        # 迷雾的「膨胀」在改版里有两处变化，都落在召唤那半截上：
+        #   1. 每只生出来的气弹挂 1 层「乒乓」——不算的话求解器以为打气弹不要钱，实际要挨反伤。
+        #   2. BloatAmount 每用一次 +1（上限 5）——求解器读的是建根时冻结的静态值，一场里不变。
+        # 召唤那半截在 MonsterMoveEffects.ApplyBeforeAttack 里，MonsterMirrors 的前缀够不着，
+        # 所以另开了 BloatSpawnPatch；递增靠 StateStore 上一个按分支复制的计数。
+        #
+        # 迷雾的出招是「首招 → 膨胀 → 蓄力 → 膨胀 → …」，所以第二回合就膨胀一次。
+        # 断言盯的是「第二回合直接复用首轮计划、一次都没重算」：气弹数、乒乓层数任一算错，
+        # 实机一到第二回合就和预测对不上，必然重算。
+        #
+        # **递增这一半这条用例没覆盖**：那要跑到第二次膨胀（第四回合），而计划排不到那么远，
+        # 实测第三回合就已经不复用了。递增靠代码里那段注释和 StateStore 的分支复制语义锁着。
+        Id = "RS-LIVING-FOG-BLOAT"
+        Encounter = "LIVING_FOG_NORMAL"
+        Character = "SILENT"
+        Tags = @("monsters")
+        Full = $true
+        Why = "迷雾的膨胀：气弹要挂乒乓，张数要逐次递增。"
+        Args = @(
+            "-EnemyCurrentHp", "200", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", '[{"cardId":"StrikeSilent","pile":"Hand","count":5},{"cardId":"StrikeSilent","pile":"Draw","count":15}]',
+            "-ExpectedReusedTurn", "2",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
         # 无尽之刃+ 让手牌上限随手里的匕首数变。求解器的上限是建根时冻结的，
         # 这条盯的是那份「按当前分支重算」的补丁在整条搜索里不会把上限算成负数或抛出来。
         # 藏匿匕首的效果被一个玩家选择劈成两段：先从手牌选几张弃掉，**选完之后**才造匕首。
