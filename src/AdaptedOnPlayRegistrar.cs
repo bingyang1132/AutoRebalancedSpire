@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using CombatSolver;
 using CombatSolver.Engine.Common.Mirrors;
@@ -41,8 +41,11 @@ internal interface IOnPlayRegistrar
 /// ——那种要靠 <see cref="AdapterSelfCheck"/> 里的核对基准版本来管。组合指纹会打进日志，
 /// 换版本重新核对时可以直接比。</para>
 ///
-/// <para><b>只认可信程序集。</b>组合里出现第三方补丁就不登记这张牌，让求解器照常拒绝整场战斗。
-/// 两个 mod 同时改同一张牌时谁先跑不确定，我们的镜像未必对得上，必须停在门口。</para>
+/// <para><b>只认可信程序集，外加一份逐方法核过的表现补丁名单。</b>组合里出现没核过的第三方补丁
+/// 就不登记这张牌，让求解器照常拒绝整场战斗——两个 mod 同时改同一张牌时谁先跑不确定，我们的镜像
+/// 未必对得上，必须停在门口。但纯表现的 mod（动画、音效、VFX）也会补 <c>OnPlay</c>，它们不碰战斗
+/// 状态，为这个拒绝整场战斗是过头的。所以另留一份 <see cref="ReviewedCosmeticPatches" />：
+/// <b>按方法全名逐条列</b>，不是按程序集放行。同一个 mod 以后新加一条或改个名，照样落回拒绝。</para>
 /// </remarks>
 internal sealed class AdaptedOnPlayRegistrar(
     MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext> ordinary) : IOnPlayRegistrar
@@ -51,6 +54,28 @@ internal sealed class AdaptedOnPlayRegistrar(
 
     private static readonly string[] TrustedAssemblies =
         [PinnedTargets.RebalancedSpireModId, Entry.ModId];
+
+    /// <summary>逐条反编译核过、确认只做表现的第三方 OnPlay 补丁。</summary>
+    /// <remarks>
+    /// 判据是「这条补丁改不改战斗状态」，不是「这个 mod 看起来是不是表现向」：
+    /// <list type="bullet">
+    /// <item>前缀必须返回 <c>void</c>——返回 <c>bool</c> 的能拦掉原方法。</item>
+    /// <item>后缀即使拿了 <c>ref Task __result</c> 也不能往回赋值，只能 await 原任务之后再做自己的事。</item>
+    /// <item>补丁体里只碰节点、音效、VFX，不碰牌、生物、Power、能量。</item>
+    /// </list>
+    /// 2026-09-15 核过这五条（RegentFX 0.5.1、OstyAnime 1.0.0）：RegentFX 的辉光是 void 前缀，
+    /// 只放音效和曝光补间；OstyAnime 那四条都是动画绑定，两条后缀走
+    /// <c>SlamTravel.AfterChain</c> 和 <c>ThumbsUpReaction.After</c>，都是先 await 原任务再触发
+    /// <c>NCreature</c> 上的动画，没有赋值回 <c>__result</c>。
+    /// </remarks>
+    private static readonly HashSet<string> ReviewedCosmeticPatches = new(StringComparer.Ordinal)
+    {
+        "RegentFX.Scripts.Vfx.Cards.GlowPatch.OnPlay",
+        "OstyAnime.PullAggroAnimPatch.Prefix",
+        "OstyAnime.SicEmSlamPatch.Prefix",
+        "OstyAnime.SicEmSlamPatch.Postfix",
+        "OstyAnime.ReaperFormReactionPatch.Postfix",
+    };
 
     private readonly StringBuilder _fingerprint = new();
 
@@ -117,11 +142,16 @@ internal sealed class AdaptedOnPlayRegistrar(
             foreach (Patch patch in group)
             {
                 string? owner = patch.PatchMethod.DeclaringType?.Assembly.GetName().Name;
-                if (owner == null || !TrustedAssemblies.Contains(owner, StringComparer.OrdinalIgnoreCase))
+                bool trusted = owner != null
+                    && TrustedAssemblies.Contains(owner, StringComparer.OrdinalIgnoreCase);
+                if (!trusted && !ReviewedCosmeticPatches.Contains(Identity(patch.PatchMethod)))
                 {
-                    rejection = $"OnPlay 上有来自 {owner ?? "未知程序集"} 的补丁";
+                    rejection = $"OnPlay 上有来自 {owner ?? "未知程序集"} 的补丁"
+                        + $"（{Identity(patch.PatchMethod)}），还没核过";
                     return false;
                 }
+                // 核过的表现补丁也要写进组合声明：建根时求解器拿现场的整套补丁和这份声明逐字比，
+                // 漏一条就是「Unreviewed OnPlay patch composition」。
                 patches.Add(new AdaptedOnPlayPatch(
                     kind, patch.PatchMethod, patch.owner, patch.priority, patch.before, patch.after));
             }
@@ -134,6 +164,9 @@ internal sealed class AdaptedOnPlayRegistrar(
         }
         return true;
     }
+
+    private static string Identity(MethodInfo method)
+        => $"{method.DeclaringType?.FullName}.{method.Name}";
 
     private static IEnumerable<(HarmonyPatchType Kind, Patch[] Patches)> Groups(Patches info)
     {
