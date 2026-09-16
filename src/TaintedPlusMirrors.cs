@@ -1,7 +1,8 @@
-using System.Reflection;
+﻿using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models.Afflictions;
 using CombatSolver;
 using CombatSolver.Engine.Common;
@@ -101,12 +102,53 @@ internal static class TaintedPlusMirrors
         foreach (PredictedCard card in context.Simulator.State
                      .GetPlayerCombatState(owner).AllCards.ToArray())
         {
-            if (card.Preview.Affliction is not Tainted)
-                continue;
-            if (!card.Original.Keywords.Contains(CardKeyword.Exhaust))
+            // 「这份消耗是战斗中加上去的」：原始模型上没有、当前预览上有。
+            bool addedExhaust = !card.Original.Keywords.Contains(CardKeyword.Exhaust)
+                && card.Preview.Keywords.Contains(CardKeyword.Exhaust);
+            bool tainted = card.Preview.Affliction is Tainted;
+
+            if (addedExhaust && !tainted)
+                ReportOrphanedExhaust(card);
+
+            // 还原消耗不再以「病症还在」为条件。实机里病症不会凭空消失，但在预测里会：
+            // 求解器的 NormalizePowerAfflictions 按原版口径清污染，我们在它前后护着，
+            // 护不住的那一次就会留下一张「带着我们加的消耗、却没有病症」的牌。
+            // 那时搜索和重放对同一串动作给出不同的关键词，最终路线核对直接抛异常。
+            if (addedExhaust)
                 card.MutablePreview.RemoveKeyword(CardKeyword.Exhaust);
-            card.ClearAffliction();
+            if (tainted)
+                card.ClearAffliction();
         }
+    }
+
+    // ---------- 埋点：病症掉了但消耗还在 ----------
+
+    private static Logger? _logger;
+    private static int _orphanReports;
+    private const int MaxOrphanReports = 5;
+
+    public static void Initialize(Logger logger) => _logger = logger;
+
+    /// <summary>
+    /// 一张牌带着我们加的「消耗」，病症却已经没了。这是上面那段解耦要处理的异常本身。
+    /// </summary>
+    /// <remarks>
+    /// 解耦之后结果已经对得上，但「病症为什么会掉」还没有答案 —— 只有两个可能：
+    /// <c>NormalizePowerAfflictions</c> 的护住/补回那一对漏了一次，或者
+    /// 打牌那一侧的晚期钩子在某条执行路径上没触发。这条日志就是用来分辨的：
+    /// 它只在异常真的发生时打，正常一局一条都不该有。
+    ///
+    /// 走的是 mod 日志（godot.log），**不是**求解器的诊断日志 —— 问题包不含 Godot 全局日志，
+    /// 所以撞上之后要连 godot.log 一起看。上限 5 条，热路径上不能刷屏。
+    /// </remarks>
+    private static void ReportOrphanedExhaust(PredictedCard card)
+    {
+        if (_orphanReports >= MaxOrphanReports)
+            return;
+        _orphanReports++;
+        _logger?.Warn(
+            $"污染+：{card.Preview.Id.Entry} 身上还带着我们加的「消耗」，但病症已经没了。"
+            + $"消耗已按实机口径还原。第 {_orphanReports}/{MaxOrphanReports} 次。");
     }
 
     // ---------- 护住污染，不让求解器按原版口径清掉 ----------
