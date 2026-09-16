@@ -1,4 +1,4 @@
-#requires -Version 7.0
+﻿#requires -Version 7.0
 <#
   平衡尖塔适配层的验收矩阵。
 
@@ -435,6 +435,55 @@ $cases = @(
         Why = "亲族随从的分支根本不在状态表里，整场算不出来。"
         Args = @(
             "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 亲族祭司第 1 回合召两只信徒，改版在 AfterAddedToRoom 里改了它们的血：
+        # 不跳舞的乘 1.5，跳舞的那只挂「假随从」再减半。镜像不跟这一步，第 2 回合
+        # 开头就有三处对不上（两只的血、外加那层假随从），整局重算。
+        # 断言必须落在第 2 回合：第 1 回合信徒还没进场，开局那一下什么都看不出来。
+        Id = "RS-KIN-SUMMON-HP"
+        Encounter = "THE_KIN_BOSS"
+        Tags = @("monsters")
+        Full = $true
+        Why = "亲族信徒召出来是 1.5 倍和 0.5 倍血，不是原版那份。"
+        Args = @(
+            "-ExpectedReusedTurn", "2",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
+        # 千足虫：改版的鼓胀只给自己 1 力量，原版是 2。三节起手招式各不相同，
+        # 中间那节第一回合就鼓胀，所以第二回合开头就能看出差一。
+        # 顺带盯住一件事：这里 switch 的是 GetType().Name，在场的是
+        # DecimillipedeSegmentFront/Middle/Back，写基类名的分支一次都不会命中。
+        Id = "RS-DECIMILLIPEDE-BULK-STRENGTH"
+        Encounter = "DECIMILLIPEDE_ELITE"
+        Tags = @("monsters")
+        Full = $true
+        Why = "千足虫的鼓胀改成 1 力量，算成 2 就每回合重算。"
+        Args = @(
+            "-EnemyCurrentHp", "999",
+            "-ExpectedReusedTurn", "2",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
+        # 无餍之物：液化给玩家 5 层「长距离」，这层在自己侧回合开始时掉 1。
+        # 求解器的 TriggerAfterSideTurnStart 只有倒计时和流沙坑两条写死的处理，
+        # 认不出就静默不衰减，于是从第二回合起层数一直对不上。
+        Id = "RS-INSATIABLE-LONG-DISTANCE-TICK"
+        Encounter = "THE_INSATIABLE_BOSS"
+        Tags = @("monsters")
+        Full = $true
+        Why = "长距离每回合掉一层，不衰减就每回合重算。"
+        Args = @(
+            "-EnemyCurrentHp", "999",
+            "-ExpectedReusedTurn", "2",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
         )
     },
     @{

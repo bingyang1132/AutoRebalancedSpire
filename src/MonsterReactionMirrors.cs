@@ -1,4 +1,4 @@
-using MegaCrit.Sts2.Core.Entities.Creatures;
+﻿using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Models.Monsters;
@@ -9,6 +9,8 @@ using CombatSolver.Engine.InCombat.Mirrors.Hooks.Damage;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Death;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.InCombat.Simulation;
+using MegaCrit.Sts2.Core.Entities.Ascension;
+using MegaCrit.Sts2.Core.Helpers;
 using RebalancedSpire.Core.Powers;
 
 namespace AutoRebalancedSpire;
@@ -170,6 +172,85 @@ internal static class MonsterReactionMirrors
     /// <summary>组装师每造一台机器人自伤的量：最大生命的 1/15。</summary>
     private static int SpawnBotCost(SimCreatureState state)
         => (int)((float)state.MaxHp * (1f / 15f));
+
+    /// <summary>
+    /// 求解器把同族神官的 <c>AfterDeath</c> 登记成了「忽略」，改版把整段换掉了。
+    /// </summary>
+    /// <remarks>
+    /// 原版那一段只有音乐和一句台词（<c>AllFollowerDeathResponse</c> 就是一句台词），
+    /// 所以上游 <c>RegisterIgnored&lt;KinPriest&gt;()</c> 是对的。改版在同一个钩子里加了两件
+    /// 有战斗后果的事，摘掉那条忽略登记换成下面这份。
+    /// </remarks>
+    public static IEnumerable<MirroredHookReplacement> Replacements()
+    {
+        yield return new MirroredHookReplacement(
+            typeof(KinPriest),
+            settings => settings.TheKin,
+            () => RegistryOverride.DropRegistration(AfterDeathMirrors.Registry, typeof(KinPriest)),
+            () => AfterDeathMirrors.Registry.Register<KinPriest>(KinPriestDeath));
+    }
+
+    /// <summary>神官自己身上那份「谁死了」的反应，用来跟住它有没有说过那句台词。</summary>
+    /// <remarks>
+    /// 实机的判据是神官的私有字段 <c>SpeechUsed</c>。求解器只捕获它自己用得上的那几个怪物
+    /// 字段（<c>DescribePredictedMonsterState</c> 里一张写死的表），同族神官整条是 "-"，
+    /// 直接 <c>GetMonsterBool</c> 会撞上「建根时没捕获」的断言。
+    ///
+    /// 所以这里只往分支状态里写 1、从不写 0：没写过就去读实机模型，那正是建根时的真值；
+    /// 写过就说明这条分支里已经死过信徒了。两边取或，分支之间也不会互相串。
+    /// </remarks>
+    private const string SpeechUsedKey = "rs_kin_priest_speech_used";
+
+    /// <summary>同族神官：每死一只信徒给自己一份力量，从第二只起立刻改走仪式。</summary>
+    /// <remarks>
+    /// 改版那段的顺序是「先给力量，再看台词说过没有：说过就换招，然后把台词标记打上」，
+    /// 所以第一只信徒死的时候不换招，第二只开始才换。仪式的下一招是光束，那条链求解器
+    /// 自己走得通（<c>RITUAL_MOVE</c> 用的还是原版实现，上游已有镜像）。
+    ///
+    /// 神官自己死的那一支：没跳过舞的信徒立刻改走复仇之舞。
+    ///
+    /// 实机的 <c>SetMoveImmediate</c> 还要求当前招式 <c>CanTransitionAway</c>，
+    /// 求解器整个没有这个概念（自己的女王联动、组装师逃跑也都不判），这里跟着不判。
+    /// 神官这几招都是单回合招式，不会卡住。
+    /// </remarks>
+    private static void KinPriestDeath(KinPriest priest, AfterDeathMirrorContext context)
+    {
+        if (context.WasRemovalPrevented)
+            return;
+        if (context.CombatState is not SimulatedCombatState combat)
+            return;
+
+        Creature self = priest.Creature;
+        if (ReferenceEquals(context.Creature, self))
+        {
+            foreach (Creature follower in combat.Enemies.ToArray())
+            {
+                if (follower.Monster is not KinFollower { StartsWithDance: false })
+                    continue;
+                if (!context.State.GetCreature(follower).IsAlive)
+                    continue;
+                combat.ForceMonsterMove(follower, "REVENGE_DANCE_MOVE");
+            }
+            return;
+        }
+
+        if (context.Creature.Monster is not KinFollower)
+            return;
+        if (!context.State.GetCreature(self).IsAlive)
+            return;
+
+        combat.Apply<StrengthPower>(
+            self,
+            AscensionHelper.GetValueIfAscension((AscensionLevel)9, 3, 2),
+            self);
+        if (SpeechUsed(combat, priest))
+            combat.ForceMonsterMove(self, "RITUAL_MOVE");
+        combat.SetMonsterInt(self, SpeechUsedKey, 1);
+    }
+
+    private static bool SpeechUsed(SimulatedCombatState combat, KinPriest priest)
+        => combat.GetCustomMonsterInt(priest.Creature, SpeechUsedKey) != 0
+           || priest.SpeechUsed;
 
     /// <summary>假随从：同伴全死光之后自己也跑。</summary>
     private static void MinionFakeDeath(MinionFakePower power, AfterDeathMirrorContext context)

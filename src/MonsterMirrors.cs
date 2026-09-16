@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -585,14 +585,19 @@ internal static class MonsterMirrors
 
             // 护卫：祭司召两只信徒，第二只开局就跳舞。
             case ("KinPriest", "GUARD_MOVE") when settings.TheKin:
-                MonsterSpawnSupport.Spawn<KinFollower>(simulator, combat, owner, "slot1");
+            {
+                Creature guard = MonsterSpawnSupport.Spawn<KinFollower>(
+                    simulator, combat, owner, "slot1");
+                KinFollowerEntrance(simulator, combat, guard, startsWithDance: false);
                 if (simulator.HasPendingChoice)
                     return false;
-                MonsterSpawnSupport.Spawn<KinFollower>(
+                Creature dancer = MonsterSpawnSupport.Spawn<KinFollower>(
                     simulator, combat, owner, "slot2",
                     configure: follower => follower.StartsWithDance = true);
+                KinFollowerEntrance(simulator, combat, dancer, startsWithDance: true);
                 __result = true;
                 return false;
+            }
 
             // 强化 / 护盾 / 治疗：都只作用在「除祭司以外的敌人」身上。
             case ("KinPriest", "POWER_UP_MOVE") when settings.TheKin:
@@ -795,22 +800,53 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 紧缚：攻击之外给玩家 1 层虚弱。求解器原版下也没有这一条。
-            case ("DecimillipedeSegment", "CONSTRICT_MOVE") when settings.Decimillipede:
-                combat.ApplyFromMonster<WeakPower>(player, 1, owner);
+            // 鼓胀：改版给自己 1 力量，原版是 2。
+            // 这三个 case 必须写具体子类名：这里 switch 的是 `GetType().Name`，
+            // 实际在场的是 DecimillipedeSegmentFront / Middle / Back，
+            // 基类名 "DecimillipedeSegment" 一次都不会命中。
+            case ("DecimillipedeSegmentFront", "BULK_MOVE") when settings.Decimillipede:
+            case ("DecimillipedeSegmentMiddle", "BULK_MOVE") when settings.Decimillipede:
+            case ("DecimillipedeSegmentBack", "BULK_MOVE") when settings.Decimillipede:
+                combat.Apply<StrengthPower>(owner, 1, owner);
                 __result = true;
                 return false;
 
             // 重接：求解器**已经**完整模拟了这一招（Apply 开头的 ResolveReviveMove 里认这个 id），
             // 只是它没进 Supports 那张表，于是「治疗」这个意图被标成不支持。
             // 这里什么都不做，只是把它从「未知招式」变成「已接管」。
-            case ("DecimillipedeSegment", "REATTACH_MOVE") when settings.Decimillipede:
+            case ("DecimillipedeSegmentFront", "REATTACH_MOVE") when settings.Decimillipede:
+            case ("DecimillipedeSegmentMiddle", "REATTACH_MOVE") when settings.Decimillipede:
+            case ("DecimillipedeSegmentBack", "REATTACH_MOVE") when settings.Decimillipede:
                 __result = true;
                 return false;
 
             default:
                 return true;
         }
+    }
+
+    /// <summary>
+    /// 信徒进场：跳舞的那只挂「假随从」并把生命减半，另一只乘 1.5。
+    /// </summary>
+    /// <remarks>
+    /// 平衡尖塔用 prefix 整个换掉了 <c>KinFollower.AfterAddedToRoom</c>，原版在那里挂的「随从」
+    /// 也随之消失，所以这里只补改版加的两件事，不要再补原版那层。
+    /// 取整跟游戏一致：<c>Creature.SetMaxHpInternal</c> 是 <c>(int)</c> 截断，不是四舍五入，
+    /// 所以基础 63 的那只是 94 而不是 95。
+    /// </remarks>
+    private static void KinFollowerEntrance(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        Creature follower,
+        bool startsWithDance)
+    {
+        if (startsWithDance)
+            combat.Apply<MinionFakePower>(follower, 1, follower);
+
+        SimCreatureState state = simulator.State.GetCreature(follower);
+        int scaled = (int)(state.MaxHp * (startsWithDance ? 0.5m : 1.5m));
+        state.SetMaxHp(scaled);
+        state.CurrentHp = scaled;
     }
 
     /// <summary>组装师每造一台机器人自伤的量：最大生命的 1/15。</summary>

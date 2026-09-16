@@ -1,4 +1,4 @@
-using MegaCrit.Sts2.Core.Models;
+﻿using MegaCrit.Sts2.Core.Models;
 using CombatSolver.Engine.Common.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using RebalancedSpire.Core.Configs;
@@ -84,6 +84,7 @@ internal static class MirroredCards
         foreach (MirroredHookReplacement hook in StatusCardMirrors.All()
                      .Concat(RelicMirrors.Replacements())
                      .Concat(MonsterMirrors.Replacements())
+                     .Concat(MonsterReactionMirrors.Replacements())
                      .Concat(CardHookMirrors.Replacements()))
         {
             if (!hook.Toggle(settings))

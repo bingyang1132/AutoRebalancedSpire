@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Modding;
@@ -227,6 +227,11 @@ public static class Entry
                 SideTurnEndDispatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
                     typeof(SideTurnEndDispatch), nameof(SideTurnEndDispatch.Postfix)));
+            // 侧回合开始：长距离每回合掉一层。
+            harmony.Patch(
+                SideTurnStartDispatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(SideTurnStartDispatch), nameof(SideTurnStartDispatch.Postfix)));
             // 饥饿/审视施加与消失时，对已经在场的牌整批感染、整批清除。
             harmony.Patch(
                 PowerAfflictionPatch.ResolveTarget(),
