@@ -45,7 +45,7 @@
 
 让[b]杀戮尖塔2自动战斗求解器[/b]适用于[b]平衡尖塔[/b]。
 
-装了平衡尖塔之后，你的牌组里只要有它改过的 33 张牌里的任意一张，求解器就会拒绝规划整场战斗。装上本 Mod 之后求解器照常工作。不改变任何游戏行为和数值。
+装了平衡尖塔之后，牌组里只要有它改过的 33 张牌里的任意一张，求解器就会拒绝规划整场战斗。本 Mod 装上之后求解器照常工作。不改变任何游戏行为和数值。
 
 [h2]需要装什么[/h2]
 
@@ -74,18 +74,22 @@
 
 [list]
 [*][b]被换掉打出效果的 33 张牌[/b]逐张核对镜像，按反编译出的实现写，不是照着卡面文字猜
-[*][b]带选牌的那几张[/b]是真正的搜索分支：降灵、传承之锤、手上技法、隐秘匕首，选哪几张由求解器自己搜
-[*][b]怪物招式[/b]：改版换了 id 的 26 条里，有效果的都接管了；另外 10 条数值或效果被改写、不跟就会算错的也补齐了
-[*][b]平衡尖塔新加的 Power[/b] 33 个里 32 个有镜像，新病症、新附魔、新牌、三瓶新茶也都覆盖了
+[*][b]带选牌的那四张[/b]是真正的搜索分支：降灵、传承之锤、手上技法、隐秘匕首，选哪几张由求解器自己搜
+[*][b]改过的怪物招式[/b]：同族小队、组装师、灵魂枢纽、无厌沙虫、胧光怪、残杀千足虫、异蛙寄生虫这些都在内
+[*][b]新加的 33 个 Power[/b] 里 32 个有镜像，4 个新病症、2 个新附魔、2 张新牌、3 瓶新茶也都覆盖了
 [*][b]7 个战斗内遗物[/b]：轰鸣海螺、钻石头冠、十字弓、选择悖论、小提琴、历史课、低语耳环
 [*][b]全局规则[/b]：覆甲衰减、会变的手牌上限、回合结束的保留与弃牌选择
 [/list]
 
-[h2]有一处没适配：门扉缔造者[/h2]
+[h2]已知缺口[/h2]
 
-平衡尖塔新加的第三章 Boss[b]门扉缔造者[/b]没有适配。它关着门的时候用一条假血条挡住选中，求解器没有「血条是假的」这个概念，要跟上得先改求解器本身。
+有 1 处：
 
-[b]那一场会用不了，但不会算错[/b]：求解器把它的出招标成「不支持」，只打红字，不会给一条看起来可信的错路线。建议在平衡尖塔的设置里关掉[b]门扉缔造者[/b]，关掉之后它不进第三章 Boss 池，这块空白就没了。
+[list]
+[*][b]门扉缔造者[/b]（平衡尖塔新加的第三章 Boss）。它关着门的时候用一条假血条挡住选中，求解器没有「血条是假的」这个概念，要跟上得先改求解器本身。它[b]不会静默算错[/b] —— 求解器把它的出招标成「不支持」，只打红字，不会给一条看起来可信的错路线。建议在平衡尖塔的设置里关掉它，关掉之后它不进第三章 Boss 池，这块空白就没了。
+[/list]
+
+本 Mod 只在加载时提醒一次，不替你改设置。
 
 [h2]常见问题[/h2]
 
@@ -93,7 +97,7 @@
 说明适配层没有加载。日志里 AutoRebalancedSpire 开头那几行会写明原因，最常见的是求解器版本低于 0.38.2。适配层是全有或全无：前提不成立就一个镜像都不注册，绝不装一半。
 
 [b]平衡尖塔更新之后还能用吗？[/b]
-它的每一张改动牌都是直接替换打出效果的补丁，换一版就等于换一份实现。所以本 Mod 钉的是 v0.3.10-beta，对着别的版本运行时日志里会写「这一份平衡尖塔不是逐条核对过的那一版」。看到那句话又觉得路线不对，请报 Bug，我会跟版本。
+它改过的每一张牌都是直接替换打出效果的补丁，换一版就等于换一份实现。所以本 Mod 钉的是 v0.3.10-beta，对着别的版本运行时日志里会写「这一份平衡尖塔不是逐条核对过的那一版」。看到那句话又觉得路线不对，请报 Bug，我会跟版本。
 
 [b]在平衡尖塔的设置里把某张牌关掉了，求解器会怎么算？[/b]
 关掉等于那张牌回到原版语义，求解器按原版算，是对的。但开关是在进游戏时读一次的：中途改了开关，本 Mod 会发现登记时的状态和现在对不上，于是不放行——求解器停在第三方检查上，而不是拿着一份过期的镜像继续算。改完开关重开游戏即可。
@@ -125,10 +129,10 @@ With RebalancedSpire installed, a deck holding any of the 33 cards it changes ma
 
 [h2]The solver is under active development, and so is this mod[/h2]
 
-This adapter is written against the solver's internal interfaces, so a solver change can require an adapter change. It therefore ships on two tracks:
+This adapter is written against the solver's internal interfaces, so a solver change can require an adapter change. It therefore ships on two channels:
 
 [list]
-[*][b]Workshop[/b] — the one you are looking at. Targets the solver's [b]released[/b] builds. Just subscribe; this is the one you want.
+[*][b]Steam Workshop[/b] — the one you are looking at. Targets the solver's [b]released[/b] builds. Just subscribe; this is the one you want.
 [*][b]GitHub[/b] — targets one specific solver version, possibly an unreleased development build. Every release states which solver version it targets and links to it.
 [/list]
 
@@ -136,27 +140,33 @@ This mod on GitHub: https://github.com/bingyang1132/AutoRebalancedSpire
 The solver on the Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3790899961
 The solver on GitHub: https://github.com/Torch1230/CombatSolver
 
-[h2]Coverage[/h2]
+Torch's Slay the Spire 2 modding group (Chinese-language, QQ): 1106541324
+
+[h2]What is covered[/h2]
 
 [list]
-[*][b]All 33 cards whose play effect was replaced[/b], each written against the decompiled implementation rather than guessed from the card text
-[*][b]The ones that make you pick cards[/b] are real search branches: Seance, Heirloom Hammer, Hand Trick, Hidden Daggers — the solver searches which cards to pick
-[*][b]Monster moves[/b]: of the 26 given new ids, every one that carries an effect is taken over; plus 10 whose numbers or effects were rewritten
-[*][b]32 of the 33 new Powers[/b], plus the new afflictions, enchantments, cards and the three new teas
+[*][b]All 33 cards whose play effect was replaced[/b], mirrored one by one against the decompiled implementation rather than guessed from the card text
+[*][b]The four that make you pick cards[/b] are real search branches: Seance, Heirloom Hammer, Hand Trick and Hidden Daggers — the solver searches which cards to take
+[*][b]Changed monster moves[/b]: The Kin, Fabricator, Soul Nexus, The Insatiable, The Obscura, Decimillipede and Phrog Parasite among them
+[*][b]32 of the 33 new powers[/b], plus 4 new afflictions, 2 new enchantments, 2 new cards and the three new teas
 [*][b]7 in-combat relics[/b]: Booming Conch, Diamond Diadem, Crossbow, Choices Paradox, Fiddle, History Course, Whispering Earring
 [*][b]Global rules[/b]: Plating decay, dynamic max hand size, turn-end retain and discard choices
 [/list]
 
-[h2]One thing is not adapted: Doormaker[/h2]
+[h2]Known gaps[/h2]
 
-The act 3 boss [b]Doormaker[/b] that RebalancedSpire adds is not adapted. While closed it blocks targeting with a fake health bar, and the solver has no concept of a fake health bar — following it would mean changing the solver itself.
+One of them:
 
-[b]That fight is unusable, but nothing is computed wrong[/b]: the solver marks its moves unsupported and prints red text instead of producing a plausible-looking bad route. Turning [b]Doormaker[/b] off in RebalancedSpire's settings keeps it out of the act 3 boss pool and removes the gap.
+[list]
+[*][b]Doormaker[/b], the act 3 boss RebalancedSpire adds. While closed it blocks targeting with a fake health bar, and the solver has no concept of a fake health bar — following it would mean changing the solver itself. It [b]never silently miscalculates[/b]: the solver marks its moves unsupported and prints red text instead of producing a plausible-looking bad route. Turning it off in RebalancedSpire's settings keeps it out of the act 3 boss pool and removes the gap.
+[/list]
+
+This mod says so once at load; it does not change your settings.
 
 [h2]FAQ[/h2]
 
 [b]I installed this mod and the solver still says it found an incompatible third-party mod.[/b]
-The adapter did not load. The first few AutoRebalancedSpire lines in the log say why; the usual cause is a solver older than 0.38.2. The adapter is all or nothing: if its assumptions do not hold it registers nothing at all rather than half a mirror.
+The adapter did not load. The AutoRebalancedSpire lines in the log say why; the usual cause is a solver older than 0.38.2. The adapter is all or nothing: if its assumptions do not hold it registers nothing at all rather than half a mirror.
 
 [b]Will it still work after RebalancedSpire updates?[/b]
 Every card it changes is a patch that replaces the play effect outright, so a new build means new implementations. This mod is pinned to v0.3.10-beta; against any other build the log says that this RebalancedSpire is not the one that was verified card by card. If you see that line and a route looks wrong, please report it — I follow their versions.
@@ -166,7 +176,7 @@ Off means that card is back to vanilla, and the solver computes vanilla, which i
 
 [h2]Reporting bugs[/h2]
 
-The solver exports bug packages. Attach one to a GitHub issue along with what you saw. Bug reports welcome!
+The solver exports bug packages. Attach one to a GitHub issue along with what you saw, or bring it up in the group. Bug reports welcome!
 
 [h2]Credits[/h2]
 
