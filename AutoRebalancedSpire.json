@@ -1,7 +1,7 @@
 {
   "id": "AutoRebalancedSpire",
   "name": "平衡尖塔适配 | AutoRebalancedSpire",
-  "author": "bingyang1132",
+  "author": "机动战士高俅",
   "description": "教战斗路线求解器认识 RebalancedSpire 改过的牌。本 mod 不改变任何游戏行为，只补上求解器缺失的模拟镜像。需要同时装有战斗路线求解器和 RebalancedSpire。",
   "version": "1.0.0",
   "has_pck": false,

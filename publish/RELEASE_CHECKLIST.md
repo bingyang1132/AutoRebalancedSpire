@@ -73,8 +73,9 @@
       `mod_id.txt` 已在工作区，**别删** —— 以后更新靠它认条目。
       条目页 https://steamcommunity.com/sharedfiles/filedetails/?id=3803035225
       预览图、中英两份标题描述、三个依赖都上了。
-- [ ] 作者自己订阅装一遍确认能加载，确认了把 `publish/workshop.json` 的 `visibility`
-      改成 `public` 重传一次。
+- [x] 作者订阅装了一遍，确认能加载（2026-09-17）。
+- [x] `visibility` 改成 `public` 重传（2026-09-17）。同一次把清单里的 `author` 从
+      `bingyang1132` 换成 Steam 昵称 **机动战士高俅**，和工坊条目的作者名一致。
 
 ### GitHub 仓库
 
@@ -87,8 +88,7 @@
 - [x] 远端仓库 https://github.com/bingyang1132/AutoRebalancedSpire 已推（默认分支 `main`，
       本地分支从 `master` 改名成 `main` 对齐）。**目前是 private** —— 工坊正文里给了这个链接，
       发布前要改成 public，否则订阅者点过去是 404。
-- [ ] tag `v1.0.0` 与 GitHub release。**`gh release create` 会被本地权限策略拦下，
-      这一步每版都要交给作者自己跑**（AutoWatcher 1.0.4 那次撞过）。
+- [ ] tag `v1.0.0` 与 GitHub release。
 
 ## 下一版要记得的事
 
