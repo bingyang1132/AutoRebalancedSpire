@@ -448,6 +448,9 @@ $cases = @(
         Full = $true
         Why = "同族信徒召出来是 1.5 倍和 0.5 倍血，不是原版那份。"
         Args = @(
+            # 敌人血量必须显式给：harness 的默认值是 1，那样整场第一回合就打完了，
+            # 第 2 回合根本不存在，断言只会挂在「没有观察到第 2 回合复用」上。
+            "-EnemyCurrentHp", "999",
             "-ExpectedReusedTurn", "2",
             "-ExpectedUnexpectedReplansAtMost", "0",
             "-StopAfterExpectedReuse"
