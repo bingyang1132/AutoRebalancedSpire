@@ -1,7 +1,6 @@
 **/bin/
 **/obj/
 **/.godot/
-**/publish/
 **/.vs/
 **/.idea/
 **/*.user
