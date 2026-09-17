@@ -56,8 +56,9 @@
 
 ### 打包
 
-- [ ] `BLOCK` **图标和创意工坊预览图**。上传器只认工作区里的 `image.png` 一个文件，
-      Steam 上限 1 MB；AutoWatcher 那次用的是 512×512（490 KB），1024 会超。作者自制。
+- [x] **图标和创意工坊预览图**（作者自制，2026-09-17）。`publish/icon.png` 1254×1254；
+      预览图由它缩成 512×512（`publish/image.png`，502 KB）。Steam 上限 1 MB，640 缩图是
+      761 KB、也在限内，选 512 是跟 AutoWatcher 保持一致并多留余量。
 - [x] `publish/steam-description.md`（中英两份 BBCode 正文，含写作约定）
 - [x] `publish/build-workshop-json.py` + `publish/workshop.json`。
       正文由脚本生成，别手工改 JSON。依赖三个 item id 都已填：
