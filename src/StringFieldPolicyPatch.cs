@@ -21,11 +21,11 @@ namespace AutoRebalancedSpire;
 /// <list type="bullet">
 ///   <item>污染+（感染棱柱精英）</item>
 ///   <item>守护（信众）</item>
-///   <item>寄生+（寄生蛙精英）</item>
-///   <item>吸取拥抱（黏液狂战士）</item>
-///   <item>长距离（贪食者）</item>
-///   <item>乒乓（活体迷雾）</item>
-///   <item>枯魂（魂枢）</item>
+///   <item>寄生物+（异蛙寄生虫精英）</item>
+///   <item>榨取拥抱（史莱姆狂战士）</item>
+///   <item>遥远距离（无厌沙虫）</item>
+///   <item>乒乓（活雾）</item>
+///   <item>灵魂凋亡（灵魂枢纽）</item>
 /// </list>
 ///
 /// 这七个字段全是「某张牌／某只怪的名字」，拿去填提示文字用的，一个都不参与结算 ——

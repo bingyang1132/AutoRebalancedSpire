@@ -31,8 +31,8 @@
 
 1. 放行补丁挂在一个实机不再调用的方法上 —— **现在每一场带这 33 张牌的战斗都被拒绝**，
    今晚那份化石追踪者的问题包就是这个。
-2. 幽灵骑士「咒缚」的招式 id 在适配层里写错了（`HEX_MOVE`，实际是 `HEX`），镜像是死代码。
-3. 瀑布巨人的两招（`RAM_MOVE`、`PRESSURE_GUN_MOVE`）改版去掉了蒸汽层，求解器照旧每次加 3 层。
+2. 幽灵骑士「恶咒」的招式 id 在适配层里写错了（`HEX_MOVE`，实际是 `HEX`），镜像是死代码。
+3. 瀑布巨兽的两招（`RAM_MOVE`、`PRESSURE_GUN_MOVE`）改版去掉了蒸汽层，求解器照旧每次加 3 层。
 
 ---
 
@@ -139,7 +139,7 @@ v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里
 | 6 | `VineShambler` / `GRASPING_VINES_MOVE` | 不打伤害了，缠绕 1 层 **外加自己加甲** | 只上缠绕，看不到那份格挡 | n/a | **已修** |
 | 7 | `WaterfallGiant` / `RAM_MOVE` | 只打一下，**不再给蒸汽** | 仍给自己 3 层 `SteamEruptionPower` | n/a | **已修** |
 | 8 | `WaterfallGiant` / `PRESSURE_GUN_MOVE` | 打一下并把自己的压力枪伤害累加，**不再给蒸汽** | 累加之外还给 3 层蒸汽 | n/a | **已修** |
-| 9 | `LivingFog` / `BLOAT_MOVE` | 每只生出来的气弹上 1 层「乒乓」，并且 `BloatAmount` 每次 +1（上限 5） | 按建根时冻结的 `BloatAmount` 生气弹，不上乒乓、不递增 | n/a | **已修（`BloatSpawnPatch`，乒乓 + 递增）** |
+| 9 | `LivingFog` / `BLOAT_MOVE` | 每只生出来的气态炸弹上 1 层「乒乓」，并且 `BloatAmount` 每次 +1（上限 5） | 按建根时冻结的 `BloatAmount` 生气态炸弹，不上乒乓、不递增 | n/a | **已修（`BloatSpawnPatch`，乒乓 + 递增）** |
 | 10 | `TestSubject` / `BURNING_GROWL_MOVE` | 灼烧 4/3 张、力量 +2/+1（高难/普通） | 读原版字段：灼烧 **5/3** 张、力量 **+3/+2** | n/a | **已修** |
 
 几条要说明的：
@@ -165,7 +165,7 @@ v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里
 `TestSubject` 的 `RESPAWN_MOVE` / `SKULL_BASH_MOVE` / `MULTI_CLAW_MOVE` /
 `PHASE3_LACERATE_MOVE`（都是逐字照抄，差的只是伤害常量，而伤害走意图）。
 
-`docs/monster-move-audit.md` 里写「瀑布巨人除加压之外那几条一致」和「求解器有镜像的那 30 条
+`docs/monster-move-audit.md` 里写「瀑布巨兽除加压之外那几条一致」和「求解器有镜像的那 30 条
 已经逐条比完了」，这两句是错的 —— 上面第 6、7、8 条就在那批里。那份表是脚本生成的，
 它自己也提示过可能有漏判；这次是手工逐句比的，以这份为准。
 
@@ -173,7 +173,7 @@ v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里
 
 改版给 26 条出招换了新 id，`MoveCoveragePatch.SupportsPostfix` 已经补了其中有效果的那些。
 剩下没补的都是「求解器原版下也不支持」的招式，改版改了它们不会让预测更错。
-还有一整块是门匠（Doormaker）那个新 Boss，`Entry.WarnAboutUnadaptedContent` 已经明确
+还有一整块是门扉缔造者（Doormaker）那个新 Boss，`Entry.WarnAboutUnadaptedContent` 已经明确
 声明不做，加载时会提醒玩家去关掉开关。
 
 ---
@@ -184,8 +184,8 @@ v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里
 
 | Power | 情况 | 后果分级 |
 | --- | --- | --- |
-| `OmnidynamicsPower` | 门匠专属（「全能」） | 无影响 —— 门匠整块已声明不做 |
-| `ToItsOriginOwnerPower` | 打出被标记的拜尔多尼斯之卵之后给玩家的那层，作用是战后清卵和加一次牌选择 | 无影响 —— 全是战斗外的事 |
+| `OmnidynamicsPower` | 门扉缔造者专属（「万物动力学」） | 无影响 —— 门扉缔造者整块已声明不做 |
+| `ToItsOriginOwnerPower` | 打出被标记的多尼斯异鸟蛋之后给玩家的那层，作用是战后清卵和加一次牌选择 | 无影响 —— 全是战斗外的事 |
 
 改版对**原版** Power 的行为改动只有三处，全部已镜像：
 
@@ -229,22 +229,22 @@ v0.38.6  只剩 PredictionModPatchAudit 里的定义和 UnattendedTestRunner 里
 | 状态牌 | `Soot`（只改了费用和关键字） | 不用做，数据层 | 无影响 |
 | 新病症 | `Withering` | `AfflictionMirrors` | 无影响 |
 | 新病症 | `Devoured` / `Weighted` | `CardEnteredCombatPatch` + `PowerAfflictionPatch` | 无影响 |
-| 新病症 | `ToItsOriginOwner` | 只在 `MonsterMirrors` 里施加，**它自己的 `OnPlay` 没镜像** | **只会多打一条红字** |
+| 新病症 | `ToItsOriginOwner` | `MonsterMirrors` 施加，`AfflictionMirrors` 镜像它的 `OnPlay`（见 §十一） | 无影响 |
 | 新附魔 | `Energetic` / `Poisonous` | `EnchantmentMirrors` | 无影响 |
 | 原版附魔 | `Inky.EnchantDamageAdditive` | 不用做（`EnchantmentMirrors` 注释里记了理由） | 无影响 |
 | 新牌 | `CorpseExplosion` / `LimitBreak` | `NewCardMirrors` | 无影响 |
 | 原版牌的钩子 | `RightHandHand` / `RocketPunch` | `CardHookMirrors` | 无影响 |
 | 原版牌的钩子 | `Bolas.BeforeHandDraw` | 求解器**从来不分发牌的这个钩子**，原版下也一样缺 | 无影响（不是改版带来的） |
 
-### 缺口 2｜`ToItsOriginOwner.OnPlay` 没镜像 —— 只会多打一条红字
+### 缺口 2｜`ToItsOriginOwner.OnPlay` 没镜像 —— 只会多打一条红字（**已修，见 §十一**）
 
-拜尔多尼斯的「发怒」会给玩家牌组里的卵标上这个病症（`MonsterMirrors` 已经镜像了这一步），
-之后打出那张卵会：给所有玩家一层 `ToItsOriginOwnerPower`，然后**把拜尔多尼斯直接移出战斗**。
+多尼斯异鸟的「愤怒」会给玩家牌组里的卵标上这个病症（`MonsterMirrors` 已经镜像了这一步），
+之后打出那张卵会：给所有玩家一层 `ToItsOriginOwnerPower`，然后**把多尼斯异鸟直接移出战斗**。
 
 `AfflictionOnPlayMirrors.Registry` 只登记了 `Withering`。碰到没登记的重写，
 `MethodMirrorRegistry.Invoke` 走的是 `RecordMethodNotMirroredRisk()` —— 记一条风险、不结算，
 **不会静默算错**。但代价是求解器看不到「打一张卵直接结束这场精英战」这条线，
-遇到拜尔多尼斯的那一场会一直挂着红字。
+遇到多尼斯异鸟的那一场会一直挂着红字。
 
 补它不难（就是一次移除敌人），属于第二优先级之后的事。
 
@@ -422,27 +422,71 @@ NativeChoicePlanMismatchException：原生选牌页面找不到 SHIV+0#0；
 
 ## 十、写不出夹具的两处：求解器不打的牌，锁不住（2026-09-17）
 
-这一轮的三处修复（往世的动态变量、长距离涨层、恐惧蛛的幻灭）里，只有恐惧蛛那条
-`RS-OBSCURA-ILLUSION-DISILLUSION` 能端到端锁住：幻影是敌人自己召的，不需要求解器配合。
+这一轮的三处修复（来生的动态变量、遥远距离涨层、寄生惧魔的幻灭）里，只有寄生惧魔那条
+`RS-OBSCURA-ILLUSION-DISILLUSION` 能端到端锁住：幻象是敌人自己召的，不需要求解器配合。
 
 另外两条都要**求解器主动打出某张牌**，而它只打能减掉血的牌：
 
-- **往世**（`RS-AFTERLIFE-OSTY-VARS`，已删）。奥斯提满血时治疗量是 0 收益，求解器不打。
+- **来生**（`RS-AFTERLIFE-OSTY-VARS`，已删）。奥斯提满血时治疗量是 0 收益，求解器不打。
   夹具报「战斗中没有打出预期卡牌 AFTERLIFE」。让它有收益要奥斯提先掉血或先死，而无头脚本
   没有任何奥斯提的旋钮，只能靠敌人打死它，那又取决于选目标，不可控。
-- **长距离**（`RS-LONG-DISTANCE-FRANTIC-ESCAPE`，已删）。仓皇逃窜是状态牌，两回合内不一定
+- **遥远距离**（`RS-LONG-DISTANCE-FRANTIC-ESCAPE`，已删）。狂乱逃离是状态牌，两回合内不一定
   摸得到；`-ExpectedPlayedCardId FRANTIC_ESCAPE` 同样报没打出来。
 
 把这两条换成／退成什么：
 
-- 长距离退成 `RS-LONG-DISTANCE-CARD-PLAYED-MIRROR`，直接往玩家身上注入长距离，只断言
+- 遥远距离退成 `RS-LONG-DISTANCE-CARD-PLAYED-MIRROR`，直接往玩家身上注入遥远距离，只断言
   `-ExpectedInitialUnmirroredCount 0`。它盯的是**有没有登记**，不是涨得对不对——因为
   `AfterCardPlayed` 每打一张牌都会分发到这个 Power，没登记就记一条未镜像风险。
   负对照（把登记那一行注掉）如期报「初始路线有 1 条未镜像效果」。
-- 往世没有等价的探针：`AfterPowerAmountChanged` 根本不在求解器的覆盖元数据里，漏了不记风险。
+- 来生没有等价的探针：`AfterPowerAmountChanged` 根本不在求解器的覆盖元数据里，漏了不记风险。
   这一条只有三个问题包的数值对照（`[Heal=0,Summon=-1]` 对 `[Heal=4,Summon=3]`，
   以及实验体那场奥斯提差的正好是 4 点）和反编译，**没有回归证据**。
 
 **教训**：凡是「镜像某张牌被打出时的副作用」，夹具能不能成立取决于求解器愿不愿意打那张牌，
 而这一点不受我们控制。写之前先问「这张牌在这个场景里减掉血吗」；答案是否定的，就别指望
 用端到端夹具锁它，改去锁一条求解器自己会报的风险，或者老实写明没有回归证据。
+
+---
+
+## 十一、缺口 2 已修：打出被标记的多尼斯异鸟蛋（2026-09-16）
+
+`ToItsOriginOwner.OnPlay` 现在登记在 `AfflictionOnPlayMirrors.Registry` 上
+（`src/AfflictionMirrors.cs`）。至此普查里列出的缺口全部补完，剩下的只有声明不做的门扉缔造者。
+
+镜像做三件事，和改版的实现一一对应：
+
+1. 只认「牌是多尼斯异鸟蛋」且「目标是多尼斯异鸟」，两个条件缺一就原样返回。
+2. 给每个玩家一层「物归原主」。这层的作用全在战斗外（战后清卵、多给一次选牌），求解器不结算它，
+   但它**进指纹** —— 实机加了而预测没加，下一回合两边的 Power 列表对不上，整场重算。
+3. 把异鸟按逃跑口径移出战斗（`CreatureEscaped` 正好是「清空它身上全部 Power + 移出战斗」，
+   而且不算一次死亡）。局外那次额外选牌奖励没有镜像，求解器的长期收益会低估这条路线。
+
+卵本身不用管：病症的 `AfterApplied` 去掉「不可打出」换成「消耗」，走的是求解器自己会调的那条
+路（`CombatPredictionSimulator` 施加病症后会调 `AfterApplied`）；改版把目标类型改成单体敌人的
+那个补丁是取值器补丁，求解器读活的模型，自动跟随。
+
+### 夹具
+
+`RS-BYRDONIS-EGG-RETURN`：精英战 `BYRDONIS_ELITE`，清空牌堆，手里塞一张挂着「物归原主」的卵，
+断言 `-ExpectedPlayedCardId BYRDONIS_EGG` 和 `-ExpectedInitialUnmirroredCount 0`。
+**必须带 `Full = $true`** —— 不跑完整场战斗就没有「打没打出这张牌」可言，第一次少写这一条，
+挂在「战斗中没有打出预期卡牌」，看上去像镜像不对，其实是夹具没让战斗开始。
+
+反向对照（把登记那一行注掉重新构建）如期挂掉，报的是
+「战斗结束，但仍存在未死亡敌人」：求解器没预测到异鸟会退场，实机退场了，执行器对不上账。
+
+### 来生仍然没有回归证据
+
+这一轮又试了两种写法，都栽在同一处（求解器不打不减掉血的牌）：
+
+- 带 `-ExpectedPlayedCardId AFTERLIFE` 跑满整场：`战斗结束，但仍存在未死亡敌人`
+  ——手里只有一张来生，玩家先死了。
+- 换成「两回合复用预测状态」加高玩家生命：`战斗中没有打出预期卡牌 AFTERLIFE`。
+
+补一条对 §十的更正：**无头 harness 是有奥斯提旋钮的**（`OstyHpBefore`、`ExpectedOstyHp`、
+`ExpectedOstyMaxHp`、`ExpectedOstyPowers`），但它们在 `UnattendedMonsterMoveCheck` 里，
+属于「摆好盘面、驱动一条怪物招式、核对结果」那套检查，不是搜索夹具能用的参数；
+而且 `OstyHpBefore` 把最大生命和当前生命设成同一个值，奥斯提总是满血，治疗量照样是 0 收益。
+
+来生那一处的证据仍然只有三份问题包的数值对照和反编译。

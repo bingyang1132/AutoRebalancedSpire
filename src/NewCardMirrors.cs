@@ -30,7 +30,7 @@ internal static class NewCardMirrors
         return 3;
     }
 
-    /// <summary>尸爆：给目标上毒，再上一层「尸爆」。</summary>
+    /// <summary>尸爆术：给目标上毒，再上一层「尸爆术」。</summary>
     /// <remarks>
     /// 变量键是 <c>PoisonPower</c> 不是 <c>Poison</c> —— <c>PowerVar&lt;T&gt;</c> 的单参数构造用的是
     /// 类型名做键，牌面上那个 <c>DynamicVars.Poison</c> 只是个取值快捷方式。写错了会在结算到
@@ -60,7 +60,7 @@ internal static class NewCardMirrors
             V.Power(context, typeof(StrengthPower), strength);
     }
 
-    /// <summary>尸爆：挂着它的敌人死掉时，按它的最大生命 × 层数打所有可命中的敌人。</summary>
+    /// <summary>尸爆术：挂着它的敌人死掉时，按它的最大生命 × 层数打所有可命中的敌人。</summary>
     /// <remarks>
     /// 伤害属性是「不可格挡 + 无强化」，而且没有施加者 —— 照原版写的来。
     /// 不镜像的话求解器看不到「打死这只会连带清场」，会把一条很强的路线压掉。

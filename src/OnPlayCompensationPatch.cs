@@ -15,8 +15,8 @@ namespace AutoRebalancedSpire;
 ///
 /// 对被 RebalancedSpire 换过实现的牌，这一层补偿是**按原版语义写的**，结果有两种：
 /// <list type="bullet">
-///   <item>轻的是重复结算 —— 比如永恒护甲，镜像给一次镀甲，补偿再给一次。</item>
-///   <item>重的是直接抛异常 —— 纺纱的变量已经从 <c>SpinnerPower</c> 换成了
+///   <item>轻的是重复结算 —— 比如永恒铠甲，镜像给一次镀甲，补偿再给一次。</item>
+///   <item>重的是直接抛异常 —— 旋转工艺的变量已经从 <c>SpinnerPower</c> 换成了
 ///     <c>SpinnerPlusPower</c>，补偿那句按老键取值，<c>KeyNotFound</c> 直接把整条搜索打断。
 ///     验收矩阵第一次跑就是这么挂的。</item>
 /// </list>

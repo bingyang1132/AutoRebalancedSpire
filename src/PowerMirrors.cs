@@ -45,7 +45,7 @@ internal static class PowerMirrors
         => AccessTools.Method(typeof(TurnStartPowerSupport), HandDrawName)
            ?? throw new MissingMethodException(nameof(TurnStartPowerSupport), HandDrawName);
 
-    /// <summary>发牌之前：无尽之刃+ 造匕首，必然结局+ 挑几张牌放到牌堆顶。</summary>
+    /// <summary>发牌之前：无尽刀刃+ 造匕首，既定事项+ 挑几张牌放到牌堆顶。</summary>
     /// <remarks>
     /// 求解器这个时点是 <c>TurnStartPowerSupport.TriggerBeforeHandDraw</c> 里一段按类型写死的
     /// 流程，第三方 Power 进不去，也**不记未镜像风险**（<c>BeforeHandDraw</c> 根本没有镜像注册表，
@@ -76,7 +76,7 @@ internal static class PowerMirrors
                         player, PileType.Hand, blades.Amount, player);
                     break;
 
-                // 必然结局+：洗牌（如有必要）之后从抽牌堆挑 Amount 张放到牌堆顶。和原版的差别有两处：
+                // 既定事项+：洗牌（如有必要）之后从抽牌堆挑 Amount 张放到牌堆顶。和原版的差别有两处：
                 // 原版是挑完进手牌并把自己移除，改版是挑完放牌堆顶、自己留着，每回合都来一次。
                 case ForegoneConclusionPlusPower:
                 {
@@ -111,16 +111,16 @@ internal static class PowerMirrors
         }
     }
 
-    /// <summary>长距离：自己打出一张仓皇逃窜就涨一层，涨到 11 层沙虫直接退场。</summary>
+    /// <summary>遥远距离：自己打出一张狂乱逃离就涨一层，涨到 11 层无厌沙虫直接退场。</summary>
     /// <remarks>
-    /// 这一层数是伤害倍率的唯一输入（挨打和打沙虫各一条曲线），少算一层整场的伤害预期全错。
+    /// 这一层数是伤害倍率的唯一输入（挨打和打无厌沙虫各一条曲线），少算一层整场的伤害预期全错。
     /// 求解器自己会报 <c>COVERAGE source=..._LONG_DISTANCE_POWER method=AfterCardPlayed
     /// reason=MethodNotMirrored</c>，但那只是记一条风险，数值照样按没涨算。
     ///
     /// 涨层走 <c>SetPowerAmount</c> 而不是 <c>Apply</c>：原版这里用的是
     /// <c>PowerCmd.ModifyAmount</c>，不过遗物的施加修正，也不吃神器。
     ///
-    /// 11 层那一段原版是「沙虫吃饱走人」：把场上所有沙虫移出战斗，另外发一瓶药水和一个稀有
+    /// 11 层那一段原版是「无厌沙虫吃饱走人」：把场上所有无厌沙虫移出战斗，另外发一瓶药水和一个稀有
     /// 遗物。退场用求解器的逃跑口径镜像；两份局外奖励没有镜像，求解器的长期收益会低估这条路线。
     /// </remarks>
     private static void LongDistance(LongDistancePower power, AfterCardPlayedMirrorContext context)
@@ -147,7 +147,7 @@ internal static class PowerMirrors
     /// <summary>改版写死的 <c>LongDistancePower.MaxAmount</c>。</summary>
     private const int LongDistanceEscapeAmount = 11;
 
-    /// <summary>神机妙算+：弃掉一张带「狡诈」的牌时抽等量的牌。</summary>
+    /// <summary>谋划专家+：弃掉一张带「奇巧」的牌时抽等量的牌。</summary>
     private static void MasterPlannerPlus(
         MasterPlannerPlusPower power,
         AfterCardDiscardedMirrorContext context)
@@ -159,7 +159,7 @@ internal static class PowerMirrors
         context.Simulator.Draw(power.Owner.Player, power.Amount);
     }
 
-    /// <summary>死神形态+：自己或奥斯提打出的强化攻击造成伤害后，按伤害 × 层数给目标上「末日」。</summary>
+    /// <summary>死神形态+：自己或奥斯提打出的强化攻击造成伤害后，按伤害 × 层数给目标上「灾厄」。</summary>
     private static void ReaperFormPlus(
         ReaperFormPlusPower power,
         AfterDamageGivenMirrorContext context)
@@ -182,7 +182,7 @@ internal static class PowerMirrors
         }
     }
 
-    /// <summary>叫咬+：奥斯提打到挂着这层的敌人时，给奥斯提的主人再召唤等量的奥斯提。</summary>
+    /// <summary>紧追不放+：奥斯提打到挂着这层的敌人时，给奥斯提的主人再召唤等量的奥斯提。</summary>
     private static void SicEmPlus(SicEmPlusPower power, AfterDamageGivenMirrorContext context)
     {
         if (context.Dealer?.Monster is not Osty osty)
@@ -194,7 +194,7 @@ internal static class PowerMirrors
     }
 
     /// <summary>
-    /// 纺纱+：每回合重置能量之后按层数充能玻璃球，然后把场上**所有**玻璃球各触发一次被动。
+    /// 旋转工艺+：每回合重置能量之后按层数充能玻璃球，然后把场上**所有**玻璃球各触发一次被动。
     /// </summary>
     /// <remarks>
     /// 和原版 <c>SpinnerPower</c> 的差别就是后面那一段 —— 原版只充能。触发的是

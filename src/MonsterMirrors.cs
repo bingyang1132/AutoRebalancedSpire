@@ -47,7 +47,7 @@ internal static class MonsterMirrors
         AfterDeathMirrors.Registry.Register<PingPongPower>(PingPong);
         AfterDeathMirrors.Registry.Register<HungerPower>(RemoveWhenApplierDies);
         AfterDeathMirrors.Registry.Register<ScrutinyPower>(RemoveWhenApplierDies);
-        // 寄生+：它的 AfterDeath 会生小虫，但那份效果求解器是在**领域清理**那一关算的
+        // 寄生物+：它的 AfterDeath 会生小虫，但那份效果求解器是在**领域清理**那一关算的
         // （DeathPowerSupport.Trigger，见 DeathSpawnPatch），和原版的寄生走同一条路。
         // 这里登记成「已审阅、这个钩子本身不用再算一遍」，否则会记一条没镜像的死亡钩子，
         // 求解器就不敢把打赢那条路线算完。原版的 InfestedPower 是被上游写死在
@@ -56,7 +56,7 @@ internal static class MonsterMirrors
         return 4;
     }
 
-    /// <summary>饥饿 / 审视：施加者死了，病症跟着消失。</summary>
+    /// <summary>饥饿 / 细看：施加者死了，病症跟着消失。</summary>
     /// <remarks>
     /// 效果本身不大，但**不登记的代价很大**：`AfterDeath` 这个名字里带 Death，
     /// 求解器一旦在某条能打赢的路线上发现没镜像的死亡钩子，就把这条路线标成
@@ -82,9 +82,9 @@ internal static class MonsterMirrors
            ?? throw new MissingMethodException(
                nameof(SimulatedCombatState), nameof(SimulatedCombatState.ResolveReviveMove));
 
-    /// <summary>幻影复活之后，把「幻灭」那几层力量收回去。</summary>
+    /// <summary>幻象复活之后，把「幻灭」那几层力量收回去。</summary>
     /// <remarks>
-    /// 改版 <c>IllusionPower.ReviveMove</c> 在治满之后，如果自己是恐惧蛛，就按场上
+    /// 改版 <c>IllusionPower.ReviveMove</c> 在治满之后，如果自己是寄生惧魔，就按场上
     /// <c>DisillusionPower</c> 的层数给自己一份等量的负力量。治满那半求解器本来就算对
     /// （通用的 <c>REVIVE_MOVE</c> 分支），所以这里只补负力量。
     /// </remarks>
@@ -102,7 +102,7 @@ internal static class MonsterMirrors
             __instance.Apply<StrengthPower>(creature, -disillusion, creature);
     }
 
-    /// <summary>惊惶：挨了强化攻击给自己起甲之外，改版还给自己一层负力量。</summary>
+    /// <summary>胆小：挨了强化攻击给自己起甲之外，改版还给自己一层负力量。</summary>
     /// <remarks>
     /// 求解器登记的处理只有起甲那半。判据逐条照抄它的：本回合还没起过甲、伤害算招式伤害、
     /// 伤害源是一张牌、而且自己确实吃到了未被格挡的伤害。
@@ -166,7 +166,7 @@ internal static class MonsterMirrors
                 return false;
             }
 
-            // 液化：在原版的流沙 4 和 6 张仓皇逃窜之外，多给一层 5 的「长距离」。
+            // 液化地面：在原版的流沙 4 和 6 张狂乱逃离之外，多给一层 5 的「遥远距离」。
             case ("TheInsatiable", "LIQUIFY_GROUND_MOVE") when settings.TheInsatiable:
                 combat.ApplyTargeted<SandpitPower>(owner, player, 4, owner);
                 combat.Apply<LongDistancePower>(player, 5, owner);
@@ -175,7 +175,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 幻象：召唤恐惧蛛那半和原版一样，改版多给它 4 层「幻灭」——复活时按这个层数扣力量。
+            // 幻象：召唤寄生惧魔那半和原版一样，改版多给它 4 层「幻灭」——复活时按这个层数扣力量。
             case ("TheObscura", "ILLUSION_MOVE") when settings.TheObscura:
             {
                 Creature illusion = MonsterSpawnSupport.Spawn<Parafright>(
@@ -224,7 +224,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 渐强：原版是「把手上的枯萎升一级再塞几张新的」，改版把那套挪到了凋零那一招，
+            // 加大力度：原版是「把手上的凋萎升一级再塞几张新的」，改版把那套挪到了无法逃脱那一招，
             // 这一招换成给自己力量和 33 点格挡。
             // 退潮：原版打一下之外给自己加甲；改版只剩那一下。
             // 改版方法体（AeonglassPatch.EbbMove）只有一句 DamageCmd.Attack。
@@ -244,7 +244,7 @@ internal static class MonsterMirrors
                 return false;
             }
 
-            // 咒缚：原版 2 层诅咒；改版每个目标 1 层，外加自己一层虚无。
+            // 恶咒：原版 2 层诅咒；改版每个目标 1 层，外加自己一层虚无。
             // 招式 id 是 "HEX" 不是 "HEX_MOVE"。原来写错成后者，这一段从来没被命中过，
             // 求解器一直按原版的 2 层诅咒算、也不给虚无。原版出招表
             // （SpectralKnight.GenerateMoveStateMachine 里 new MoveState("HEX", ...)）
@@ -255,13 +255,13 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 吸取拥抱：原版虚弱 3 + 自己 3 力量；改版只剩虚弱 3。
+            // 汲取之拥：原版虚弱 3 + 自己 3 力量；改版只剩虚弱 3。
             case ("SlimedBerserker", "LEECHING_HUG_MOVE") when settings.SlimedBerserker:
                 combat.ApplyFromMonster<WeakPower>(player, 3, owner);
                 __result = true;
                 return false;
 
-            // 呕吐黏液：原版塞 10 张黏液；改版塞 5 张，并给自己一层「吸取拥抱」。
+            // 喷吐脓水：原版塞 10 张黏液；改版塞 5 张，并给自己一层「榨取拥抱」。
             case ("SlimedBerserker", "VOMIT_ICHOR_MOVE") when settings.SlimedBerserker:
                 simulator.AddToCombat<Slimed>(player, PileType.Discard, 5, null);
                 if (simulator.HasPendingChoice)
@@ -270,7 +270,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 沉思：原版回 30 × 人数；改版 20 × 人数。力量那半两边一样。
+            // 思考：原版回 30 × 人数；改版 20 × 人数。力量那半两边一样。
             case ("KnowledgeDemon", "PONDER_MOVE") when settings.KnowledgeDemon:
                 simulator.Heal(owner, 20 * combat.Players.Count);
                 if (simulator.HasPendingChoice)
@@ -323,7 +323,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 感染：原版固定 3 张；改版按自己身上「寄生+」的层数给，没有就一张都不给。
+            // 感染：原版固定 3 张；改版按自己身上「寄生物+」的层数给，没有就一张都不给。
             case ("PhrogParasite", "INFECT_MOVE") when settings.PhrogParasite:
             {
                 int infested = combat.GetAmount<InfestedPlusPower>(owner);
@@ -339,8 +339,8 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 凋零：原版是「把手上的枯萎升一级再塞几张新的」；改版整个换了 ——
-            // 给玩家挂一层 12 点的「凋零之威」，再塞 4 张已经假升级两级、且带「凋零」病症的枯萎，
+            // 无法逃脱：原版是「把手上的凋萎升一级再塞几张新的」；改版整个换了 ——
+            // 给玩家挂一层 12 点的「凋萎存在+」，再塞 4 张已经假升级两级、且带「无法逃脱」病症的凋萎，
             // 前两张进抽牌堆、后两张进弃牌堆。
             case ("Aeonglass", "WITHERING_MOVE") when settings.Aeonglass:
             {
@@ -380,7 +380,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 自爆：炸之前先把「乒乓」摘掉，所以自爆不会反伤生成它的迷雾。
+            // 自爆：炸之前先把「乒乓」摘掉，所以自爆不会反伤生成它的活雾。
             // 摘完仍然放行原实现 —— 伤害和「炸完自己也没了」求解器本来就算对。
             case ("GasBomb", "EXPLODE_MOVE") when settings.LivingFog:
                 if (combat.GetMutablePower<PingPongPower>(owner) is { Amount: > 0 } pingPong)
@@ -470,7 +470,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 连发炮击一 / 二：改版只剩那一炮。原版这两招除了伤害还各给自己 2 力量，
+            // 重复轰击一 / 二：改版只剩那一炮。原版这两招除了伤害还各给自己 2 力量，
             // 求解器照原版口径给，两回合下来就多出 4 点力量，一到实机就对不上、整局重算。
             // 蓄能还是给 2 力量，那条没变。
             case ("CubexConstruct", "REPEATER_BLAST_MOVE") when settings.CubexConstruct:
@@ -484,7 +484,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 魂印：收掉自己身上所有「枯魂」，给玩家 99 层易伤。
+            // 灵魂标记：收掉自己身上所有「灵魂凋亡」，给玩家 99 层易伤。
             case ("SoulNexus", "SOUL_MARK_MOVE") when settings.SoulNexus:
                 foreach (SoulWitherPower soulWither in combat.EffectivePowers()
                              .OfType<SoulWitherPower>()
@@ -541,7 +541,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 第一踏 / 第二踏：按初始最大生命的 80% / 40% 给自己挂「耕耘+」的阈值。
+            // 第一踏 / 第二踏：按初始最大生命的 80% / 40% 给自己挂「横冲直撞+」的阈值。
             case ("CeremonialBeast", "FIRST_STAMP_MOVE") when settings.CeremonialBeast:
             case ("CeremonialBeast", "SECOND_STAMP_MOVE") when settings.CeremonialBeast:
             {
@@ -590,7 +590,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 逃跑：假随从演完就走。奖励是战斗外的事，这里只让它离场。
+            // 逃跑：挂「爪牙?」的那只演完就走。奖励是战斗外的事，这里只让它离场。
             case ("KinFollower", "ESCAPE_MOVE") when settings.TheKin:
                 if (combat.GetAmount<MinionFakePower>(owner) > 0)
                     combat.CreatureEscaped(owner);
@@ -658,7 +658,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 发怒：给自己一层「领地」，把玩家牌里的拜尔多尼斯之卵全部标记，再给玩家 2 层脆弱。
+            // 愤怒：给自己一层「领地」，把玩家牌里的多尼斯异鸟蛋全部标记，再给玩家 2 层脆弱。
             case ("Byrdonis", "ANGRY_MOVE") when settings.Byrdonis:
             {
                 combat.Apply<TerritorialPower>(owner, 1, owner);
@@ -678,7 +678,7 @@ internal static class MonsterMirrors
                 return false;
             }
 
-            // 增殖：层数不满 4 就给自己加一层「寄生+」，再给玩家 2 层虚弱。
+            // 增殖：层数不满 4 就给自己加一层「寄生物+」，再给玩家 2 层虚弱。
             // 层数超过 2 之后每加一层还会长 20% 最大生命并把长出来的那份治满。
             case ("PhrogParasite", "PROLIFERATION_MOVE") when settings.PhrogParasite:
             case ("PhrogParasite", "PROLIFERATION_2_MOVE") when settings.PhrogParasite:
@@ -814,7 +814,7 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
-            // 鼓胀：改版给自己 1 力量，原版是 2。
+            // 胀大：改版给自己 1 力量，原版是 2。
             // 这三个 case 必须写具体子类名：这里 switch 的是 `GetType().Name`，
             // 实际在场的是 DecimillipedeSegmentFront / Middle / Back，
             // 基类名 "DecimillipedeSegment" 一次都不会命中。
@@ -840,10 +840,10 @@ internal static class MonsterMirrors
     }
 
     /// <summary>
-    /// 信徒进场：跳舞的那只挂「假随从」并把生命减半，另一只乘 1.5。
+    /// 信徒进场：跳舞的那只挂「爪牙?」并把生命减半，另一只乘 1.5。
     /// </summary>
     /// <remarks>
-    /// 平衡尖塔用 prefix 整个换掉了 <c>KinFollower.AfterAddedToRoom</c>，原版在那里挂的「随从」
+    /// 平衡尖塔用 prefix 整个换掉了 <c>KinFollower.AfterAddedToRoom</c>，原版在那里挂的「爪牙」
     /// 也随之消失，所以这里只补改版加的两件事，不要再补原版那层。
     /// 取整跟游戏一致：<c>Creature.SetMaxHpInternal</c> 是 <c>(int)</c> 截断，不是四舍五入，
     /// 所以基础 63 的那只是 94 而不是 95。
@@ -887,7 +887,7 @@ internal static class MonsterMirrors
 
     /// <summary>乒乓：挂着它的怪物被打死时，反伤给放它出来的那只，伤害等于死者的最大生命。</summary>
     /// <remarks>
-    /// 也就是「打死毒气弹会伤到生成它的迷雾」。不镜像的话求解器看不到这条收益，
+    /// 也就是「打死气态炸弹会伤到生成它的活雾」。不镜像的话求解器看不到这条收益，
     /// 会把「先清小怪」这种正确打法压掉。层数在施加时被设成了主人的最大生命，这里直接用它。
     /// </remarks>
     private static void PingPong(PingPongPower power, AfterDeathMirrorContext context)

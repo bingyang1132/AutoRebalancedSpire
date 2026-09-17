@@ -14,10 +14,10 @@ using RebalancedSpire.Core.Powers;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 污染+：寄生棱镜精英战里替换生命火花的那套机制。
+/// 污染+：感染棱柱精英战里替换生命火花的那套机制。
 /// </summary>
 /// <remarks>
-/// 原版寄生棱镜给玩家 <c>VitalSparkPower</c>，把牌组里所有技能牌一次性污染掉；改版换成
+/// 原版感染棱柱给玩家 <c>VitalSparkPower</c>，把牌组里所有技能牌一次性污染掉；改版换成
 /// <c>TaintedPlusPower</c>，每个玩家回合的前 3 张攻击/技能各触发一次，每次随机污染手里一张
 /// 还没有病症的攻击/技能牌，被污染的牌本回合免费、并临时获得「消耗」，回合结束全部还原。
 ///

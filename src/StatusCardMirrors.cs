@@ -10,14 +10,14 @@ using RebalancedSpire.Core.Configs;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 状态牌的镜像。目前只有一张：枯萎（<c>Wither</c>，永世沙漏那条线上的）。
+/// 状态牌的镜像。目前只有一张：凋萎（<c>Wither</c>，永世沙漏那条线上的）。
 /// </summary>
 /// <remarks>
-/// 枯萎在原版是「回合结束还在手上就吃 Damage 点伤害」，求解器登记的就是那个通用处理。
+/// 凋萎在原版是「回合结束还在手上就吃 Damage 点伤害」，求解器登记的就是那个通用处理。
 /// 改版把它整个换了：
 /// <list type="bullet">
 ///   <item>变量换成 <c>Damage(0)</c> + <c>Fixed=6</c> + <c>PerLevel=3</c>，关键字清空；</item>
-///   <item><b>没带「凋零」病症时</b>吃固定 6 点（<c>Fixed</c>），伤害属性是 Unpowered|Move；</item>
+///   <item><b>没带「无法逃脱」病症时</b>吃固定 6 点（<c>Fixed</c>），伤害属性是 Unpowered|Move；</item>
 ///   <item><b>带了病症时</b>，只有假升级层数不为 0 才吃 <c>Damage</c> 那份 —— 层数是 0 就完全
 ///     不吃伤害。假升级每一层给 <c>Damage</c> 加 <c>PerLevel</c>。</item>
 /// </list>

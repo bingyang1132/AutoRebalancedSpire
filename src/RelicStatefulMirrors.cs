@@ -16,7 +16,7 @@ using RebalancedSpire.Core.Powers;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 两个被彻底重做、而且带「本回合打了几张牌」这种自有状态的遗物：钻石冠冕、轰鸣海螺。
+/// 两个被彻底重做、而且带「本回合打了几张牌」这种自有状态的遗物：钻石头冠、轰鸣海螺。
 /// </summary>
 /// <remarks>
 /// 这两个在求解器里都是 <c>RelicTurnStart</c> 那个大 switch 里的一行，做的还是**原版**的事
@@ -85,7 +85,7 @@ internal static class RelicStatefulMirrors
             __result = 0m;
     }
 
-    /// <summary>敌人回合结束时收掉钻石冠冕给的那层减伤。</summary>
+    /// <summary>敌人回合结束时收掉钻石头冠给的那层减伤。</summary>
     /// <remarks>
     /// 原版 <c>DiamondDiademPower.AfterSideTurnEnd</c> 在敌人侧结束时移除自己。求解器这个
     /// 时点是 <c>EndTurnPowerSupport.TriggerRegular</c> 里一个写死的 switch，第三方 Power
@@ -106,9 +106,9 @@ internal static class RelicStatefulMirrors
         }
     }
 
-    // ---------- 钻石冠冕 ----------
+    // ---------- 钻石头冠 ----------
 
-    /// <summary>本回合打的牌不超过阈值，玩家回合结束时给一层「钻石冠冕」减伤。</summary>
+    /// <summary>本回合打的牌不超过阈值，玩家回合结束时给一层「钻石头冠」减伤。</summary>
     /// <remarks>
     /// 张数直接用求解器自己的每回合计数，不另起一份：那份是从根历史加分支历史一起算的，
     /// 我们自己数反而容易和它对不上。和原版计数的差别是它按「打牌开始」计、改版按

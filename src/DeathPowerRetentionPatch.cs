@@ -18,11 +18,11 @@ namespace AutoRebalancedSpire;
 /// </code>
 ///
 /// 求解器的 <c>SimulatedCombatState.RemovePowersAfterDeath</c> 先按前一条算出 <c>keep</c>，
-/// 一旦死者身上有幻影就把 <c>keep</c> **整个覆盖**成后一条，而不是或上去。原版所有的 Power
+/// 一旦死者身上有幻象就把 <c>keep</c> **整个覆盖**成后一条，而不是或上去。原版所有的 Power
 /// 里没有一个同时是减益又声明「主人死了也不走」，所以这条差异在原版永远看不见。
 ///
 /// 改版的「幻灭」正好两条都占：它是减益，又重写了 <c>ShouldPowerBeRemovedAfterOwnerDeath</c>
-/// 返回 false。恐惧蛛身上恰好有幻影，于是求解器每次都把幻灭清成 0，复活时
+/// 返回 false。寄生惧魔身上恰好有幻象，于是求解器每次都把幻灭清成 0，复活时
 /// <c>MonsterMirrors.RevivePostfix</c> 读到 0 层、那 4 点负力量一次都不扣 —— 胧光怪那一场
 /// 每次复活都会因为这一处对不上而重算。
 ///

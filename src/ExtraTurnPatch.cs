@@ -11,7 +11,7 @@ namespace AutoRebalancedSpire;
 /// </summary>
 /// <remarks>
 /// 求解器只认遗物给的额外回合（<c>ConsumeExtraTurnSources</c> 里写死了琥珀香能力和帕尔之眼），
-/// Power 给的它看不见。AutoWatcher 为观者的腾跃踩过同一条路，这里照那份写法来。
+/// Power 给的它看不见。AutoWatcher 为观者的飞跃踩过同一条路，这里照那份写法来。
 ///
 /// 原版 <c>SandsOfTimePower</c>：只要还有层数就 <c>ShouldTakeExtraTurn</c>，
 /// 用掉之后 <c>AfterTakingExtraTurn</c> 里 <c>Decrement</c> 一层（不是清零）。

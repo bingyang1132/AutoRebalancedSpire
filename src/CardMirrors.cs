@@ -91,7 +91,7 @@ internal static class CardMirrors
         V.Power(context, typeof(PlatingPower), stars);
     }
 
-    /// <summary>纺纱：上一层「纺纱+」。</summary>
+    /// <summary>旋转工艺：上一层「旋转工艺+」。</summary>
     /// <remarks>
     /// 原版是「升级过的话先充一颗玻璃球，再上 <c>SpinnerPower</c>」；改版费用 1 → 2，
     /// 去掉了升级那颗球，上的换成 <c>SpinnerPlusPower</c>（每回合充能之后还会把场上所有玻璃球
@@ -115,7 +115,7 @@ internal static class CardMirrors
 
     // ---------- Regent ----------
 
-    /// <summary>必然结局：上一层「必然结局+」。</summary>
+    /// <summary>既定事项：上一层「既定事项+」。</summary>
     /// <remarks>
     /// 层数取的是牌的 <c>Cards</c> 变量。那个 Power 每回合发牌前让你从抽牌堆挑几张放到牌堆顶，
     /// 见 <see cref="PowerMirrors" />。
@@ -138,7 +138,7 @@ internal static class CardMirrors
 
     // ---------- Ironclad ----------
 
-    /// <summary>坦克：上一层「坦克+」。</summary>
+    /// <summary>肉盾：上一层「肉盾+」。</summary>
     /// <remarks>
     /// 那个 Power 在回合结束前给**其他**玩家角色加甲 —— 单人局里没有别的玩家角色，
     /// 所以它在单人局是个空转。这里照样把层数上上去：层数本身会进指纹，也会被别的效果读到。
@@ -160,7 +160,7 @@ internal static class CardMirrors
 
     // ---------- 无色 ----------
 
-    /// <summary>永恒护甲：给镀甲，再上一层「永恒护甲」。</summary>
+    /// <summary>永恒铠甲：给镀甲，再上一层「永恒铠甲」。</summary>
     /// <remarks>
     /// 那一层是个纯标记，唯一作用是让镀甲不再每回合衰减，见 <see cref="PlatingDecayPatch" />。
     /// </remarks>
@@ -181,13 +181,13 @@ internal static class CardMirrors
 
     // ---------- Silent ----------
 
-    /// <summary>手上功夫：加甲，然后给手里一张还没有「狡诈」的牌加上狡诈。</summary>
+    /// <summary>手上技法：加甲，然后给手里一张还没有「奇巧」的牌加上奇巧。</summary>
     private static void HandTrick(HandTrick card, CardOnPlayMirrorContext context)
     {
         V.Block(context);
         if (context.Simulator.HasPendingChoice)
             return;
-        V.PlayerChoice(context, "手上功夫从手牌里挑一张加狡诈");
+        V.PlayerChoice(context, "手上技法从手牌里挑一张加奇巧");
     }
 
     /// <summary>藏匿匕首：这里什么都不做，两段效果都由求解器的选择通道负责。</summary>
@@ -210,7 +210,7 @@ internal static class CardMirrors
         _ = context;
     }
 
-    /// <summary>无尽之刃：上一层「无尽之刃+」，并把牌上的张数加进那层的张数变量。</summary>
+    /// <summary>无尽刀刃：上一层「无尽刀刃+」，并把牌上的张数加进那层的张数变量。</summary>
     /// <remarks>
     /// 原版是一层一张匕首；改版把张数存在 Power 自己的 Cards 变量上，每打一次累加，
     /// 所以必须取到刚施加的那一层再改它的变量 —— 只上层数会把张数丢掉。
@@ -222,7 +222,7 @@ internal static class CardMirrors
             power.DynamicVars.Cards.BaseValue += V.Var(card, "Cards");
     }
 
-    /// <summary>神机妙算：上一层「神机妙算+」。</summary>
+    /// <summary>谋划专家：上一层「谋划专家+」。</summary>
     private static void MasterPlanner(MasterPlanner card, CardOnPlayMirrorContext context)
         => V.Power(context, typeof(MasterPlannerPlusPower), V.VarInt(card, "Cards"));
 
@@ -234,7 +234,7 @@ internal static class CardMirrors
             CanonicalModels.Enchantment<Poisonous>(),
             upgrade: card.IsUpgraded);
 
-    /// <summary>周密计划：上一层「周密计划+」。</summary>
+    /// <summary>计划妥当：上一层「计划妥当+」。</summary>
     private static void WellLaidPlans(WellLaidPlans card, CardOnPlayMirrorContext context)
         => V.Power(context, typeof(WellLaidPlansPlusPower), V.VarInt(card, "RetainAmount"));
 
@@ -266,10 +266,10 @@ internal static class CardMirrors
         }
     }
 
-    /// <summary>腾跃：加甲，再上一层「腾跃」（临时聚焦）。</summary>
+    /// <summary>飞跃：加甲，再上一层「飞跃」（临时集中）。</summary>
     /// <remarks>
     /// LeapPower 是临时 Power 模板，内部配一份等量的 FocusPower，回合结束一起收回。
-    /// 只上记账那一层的话，本回合的球被动会少算，回合结束还照收，下回合开局凭空多出一个负聚焦 ——
+    /// 只上记账那一层的话，本回合的球被动会少算，回合结束还照收，下回合开局凭空多出一个负集中 ——
     /// 这正是 AutoWatcher 在观者的「阳」上踩过的坑。
     /// </remarks>
     private static void Leap(Leap card, CardOnPlayMirrorContext context)
@@ -315,7 +315,7 @@ internal static class CardMirrors
 
     // ---------- Necrobinder ----------
 
-    /// <summary>往世：上一层「往世」。</summary>
+    /// <summary>来生：上一层「来生」。</summary>
     /// <remarks>
     /// 那一层每回合开始（晚段）在奥斯提不在时召唤一只、在时治疗它，
     /// 见 <see cref="AfterEnergyResetLateDispatch" />。
@@ -332,7 +332,7 @@ internal static class CardMirrors
         V.SoulsInto(context, PileType.Draw, V.VarInt(card, "Cards"), card.IsUpgraded);
     }
 
-    /// <summary>拉仇恨：召唤奥斯提，然后加甲。</summary>
+    /// <summary>吸引仇恨：召唤奥斯提，然后加甲。</summary>
     /// <remarks>顺序照原样：先召唤再加甲，中间任何一步起了选择都要停。</remarks>
     private static void PullAggro(PullAggro card, CardOnPlayMirrorContext context)
     {
@@ -361,7 +361,7 @@ internal static class CardMirrors
     private static void Seance(Seance card, CardOnPlayMirrorContext context)
         => V.PlayerChoice(context, "降灵会从抽牌堆里选几张转化成魂");
 
-    /// <summary>叫咬：奥斯提攻击目标，然后给目标上一层「叫咬+」。</summary>
+    /// <summary>紧追不放：奥斯提攻击目标，然后给目标上一层「紧追不放+」。</summary>
     /// <remarks>奥斯提不在或已经死了就什么都不发生，照原样判。</remarks>
     private static void SicEm(SicEm card, CardOnPlayMirrorContext context)
     {

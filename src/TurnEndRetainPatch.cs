@@ -9,16 +9,16 @@ using RebalancedSpire.Core.Powers;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 周密计划+：回合结束清手牌之前，挑最多 N 张给一次性保留。
+/// 计划妥当+：回合结束清手牌之前，挑最多 N 张给一次性保留。
 /// </summary>
 /// <remarks>
-/// 原版的周密计划给的是 <c>WellLaidPlansPower</c>，它只重写一个 <c>ShouldFlush</c> —— 取值钩子，
+/// 原版的计划妥当给的是 <c>WellLaidPlansPower</c>，它只重写一个 <c>ShouldFlush</c> —— 取值钩子，
 /// 求解器走 <c>PersistentRelicSupport.ShouldFlush</c> 现算，整只手牌都留下。改版换成了
 /// <c>WellLaidPlansPlusPower</c>：不再重写 <c>ShouldFlush</c>，而是在 <c>BeforeFlushLate</c> 让玩家
 /// 挑最多 Amount 张（1，升级 2）给一次性保留。
 ///
 /// 求解器完全没有 <c>BeforeFlush</c> / <c>BeforeFlushLate</c> 这两个时点 —— 它的注释写得很直白：
-/// 原版唯一的监听者当前版本用不到，所以整段省掉了。于是不补的话，求解器会认为打出周密计划
+/// 原版唯一的监听者当前版本用不到，所以整段省掉了。于是不补的话，求解器会认为打出计划妥当
 /// 什么都没发生，把一张牌当空气。
 ///
 /// 挂在 <c>PlayerTurnEndLifecycle.RunPhaseOne</c> 的后面，而不是清手牌那一步里：
@@ -46,7 +46,7 @@ internal static class TurnEndRetainPatch
     {
         if (!__result || combat.HasPendingChoice || simulator.IsOverOrEnding)
             return;
-        // 本来就不清手牌的回合（例如还留着原版那张周密计划），这个钩子在实机里也直接返回。
+        // 本来就不清手牌的回合（例如还留着原版那张计划妥当），这个钩子在实机里也直接返回。
         if (!PersistentRelicSupport.ShouldFlush(combat, player))
             return;
 

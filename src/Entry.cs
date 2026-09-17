@@ -92,7 +92,7 @@ public static class Entry
                 AdaptedSnapshotFallbackPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(
                     typeof(AdaptedSnapshotFallbackPatch), nameof(AdaptedSnapshotFallbackPatch.Prefix)));
-            // 迷雾的膨胀：召唤那半截在 ApplyBeforeAttack 里，MonsterMirrors 的前缀够不着。
+            // 活雾的膨胀：召唤那半截在 ApplyBeforeAttack 里，MonsterMirrors 的前缀够不着。
             harmony.Patch(
                 BloatSpawnPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(BloatSpawnPatch), nameof(BloatSpawnPatch.Prefix)));
@@ -105,7 +105,7 @@ public static class Entry
             harmony.Patch(
                 CalculatedVarPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(CalculatedVarPatch), nameof(CalculatedVarPatch.Prefix)));
-            // 镀甲的衰减规则改了：玩家首回合也减，但有永恒护甲时完全不减。
+            // 镀甲的衰减规则改了：玩家首回合也减，但有永恒铠甲时完全不减。
             harmony.Patch(
                 PlatingDecayPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(PlatingDecayPatch), nameof(PlatingDecayPatch.Prefix)));
@@ -136,12 +136,12 @@ public static class Entry
                 BolasIncrementPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(BolasIncrementPatch), nameof(BolasIncrementPatch.Prefix)),
                 postfix: new HarmonyMethod(typeof(BolasIncrementPatch), nameof(BolasIncrementPatch.Postfix)));
-            // 知识恶魔三选一里崩解的层数从 6/7/8 改成了 4/6/8。
+            // 知识恶魔三选一里瓦解的层数从 6/7/8 改成了 4/6/8。
             harmony.Patch(
                 KnowledgeCursePatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(KnowledgeCursePatch), nameof(KnowledgeCursePatch.Prefix)),
                 postfix: new HarmonyMethod(typeof(KnowledgeCursePatch), nameof(KnowledgeCursePatch.Postfix)));
-            // 寄生蛙精英死后生几只蠕虫由「寄生+」的层数决定，求解器认不出这个新 Power。
+            // 异蛙寄生虫精英死后生几只蠕虫由「寄生物+」的层数决定，求解器认不出这个新 Power。
             harmony.Patch(
                 DeathSpawnPatch.ResolveSpawnsPrimaryTarget(),
                 postfix: new HarmonyMethod(
@@ -174,7 +174,7 @@ public static class Entry
             harmony.Patch(
                 PowerMirrors.ResolveHandDrawTarget(),
                 postfix: new HarmonyMethod(typeof(PowerMirrors), nameof(PowerMirrors.HandDrawPostfix)));
-            // 周密计划+ 换成了「回合结束挑几张保留」，求解器整个 BeforeFlush 时点都没有。
+            // 计划妥当+ 换成了「回合结束挑几张保留」，求解器整个 BeforeFlush 时点都没有。
             harmony.Patch(
                 TurnEndRetainPatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
@@ -182,7 +182,7 @@ public static class Entry
             harmony.Patch(
                 MonsterMirrors.ResolveReviveTarget(),
                 postfix: new HarmonyMethod(typeof(MonsterMirrors), nameof(MonsterMirrors.RevivePostfix)));
-            // 钻石冠冕和轰鸣海螺整个换了机制：先把它们从求解器的回合开始名单里摘掉。
+            // 钻石头冠和轰鸣海螺整个换了机制：先把它们从求解器的回合开始名单里摘掉。
             harmony.Patch(
                 RelicStatefulMirrors.ResolveParticipatingTarget(),
                 postfix: new HarmonyMethod(
@@ -223,17 +223,17 @@ public static class Entry
                     typeof(TaintedPlusMirrors), nameof(TaintedPlusMirrors.NormalizePrefix)),
                 postfix: new HarmonyMethod(
                     typeof(TaintedPlusMirrors), nameof(TaintedPlusMirrors.NormalizePostfix)));
-            // 侧回合结束：饥饿/审视的衰减、死神形态+ 提前收割末日。
+            // 侧回合结束：饥饿/细看的衰减、死神形态+ 提前收割灾厄。
             harmony.Patch(
                 SideTurnEndDispatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
                     typeof(SideTurnEndDispatch), nameof(SideTurnEndDispatch.Postfix)));
-            // 侧回合开始：长距离每回合掉一层。
+            // 侧回合开始：遥远距离每回合掉一层。
             harmony.Patch(
                 SideTurnStartDispatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
                     typeof(SideTurnStartDispatch), nameof(SideTurnStartDispatch.Postfix)));
-            // Power 自己数量变了要跟着改的动态变量：往世的治疗量和召唤血量。
+            // Power 自己数量变了要跟着改的动态变量：来生的治疗量和召唤血量。
             harmony.Patch(
                 PowerAmountChangedDispatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
@@ -245,7 +245,7 @@ public static class Entry
                     typeof(DeathPowerRetentionPatch), nameof(DeathPowerRetentionPatch.Prefix)),
                 postfix: new HarmonyMethod(
                     typeof(DeathPowerRetentionPatch), nameof(DeathPowerRetentionPatch.Postfix)));
-            // 饥饿/审视施加与消失时，对已经在场的牌整批感染、整批清除。
+            // 饥饿/细看施加与消失时，对已经在场的牌整批感染、整批清除。
             harmony.Patch(
                 PowerAfflictionPatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
@@ -304,14 +304,14 @@ public static class Entry
 
     /// <summary>本适配层覆盖不到的那部分内容，加载时提醒一次。</summary>
     /// <remarks>
-    /// 门匠（Doormaker）是 RebalancedSpire 新加的第三章 Boss，不是对原版内容的改动，
+    /// 门扉缔造者（Doormaker）是 RebalancedSpire 新加的第三章 Boss，不是对原版内容的改动，
     /// 本适配层没有为它写模拟。它「关着」的时候会把自己的最大和当前生命都设成 999999999、
     /// 用假血条挡住选中，开门时再把暂存的 Power 搬回来 —— 求解器没有「血条是假的」这个概念，
     /// 要镜像得先在求解器里造一套生命遮罩机制，不是适配层能钉在外面的补丁。
     ///
     /// 求解器遇到它会把出招标成「不支持」（红字），不会给出看似可信的错路线，所以这不是安全
-    /// 问题，只是那一场用不了。建议在 RebalancedSpire 的设置里把「门匠」关掉：关掉之后那个
-    /// Boss 不进第三章的 Boss 池，连带的随机目标改写和「全能」也一起不生效，整块空白就没了。
+    /// 问题，只是那一场用不了。建议在 RebalancedSpire 的设置里把「门扉缔造者」关掉：关掉之后那个
+    /// Boss 不进第三章的 Boss 池，连带的随机目标改写和「万物动力学」也一起不生效，整块空白就没了。
     ///
     /// 这里只提醒，不替玩家改设置 —— 本 mod 声明了 <c>affects_gameplay: false</c>，
     /// 自己去动别人的开关会让这句话变成假的。
@@ -321,7 +321,7 @@ public static class Entry
         if (!AdapterSettings.Current.Doormaker)
             return;
         _logger?.Warn(
-            "RebalancedSpire 的「门匠」Boss 当前是开着的，本适配层没有为它写模拟。"
+            "RebalancedSpire 的「门扉缔造者」Boss 当前是开着的，本适配层没有为它写模拟。"
             + "遇到那一场时求解器会把出招标成不支持（红字），不会给错路线，但那一场用不了。"
             + "建议在 RebalancedSpire 的设置里关掉「Doormaker」。");
     }

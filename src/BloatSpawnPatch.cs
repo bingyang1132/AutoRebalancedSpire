@@ -11,16 +11,16 @@ using RebalancedSpire.Core.Powers;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 迷雾的「膨胀」生出来的气弹，改版会各挂一层「乒乓」。
+/// 活雾的「膨胀」生出来的气态炸弹，改版会各挂一层「乒乓」。
 /// </summary>
 /// <remarks>
 /// 这一招的召唤那半截不在 <c>MonsterMoveEffects.Apply</c> 里，而在
-/// <c>MonsterMoveEffects.ApplyBeforeAttack</c>（要先把气弹放上场，攻击才有目标），
+/// <c>MonsterMoveEffects.ApplyBeforeAttack</c>（要先把气态炸弹放上场，攻击才有目标），
 /// 所以 <see cref="MonsterMirrors"/> 那个前缀够不着，得单独补一处。
 ///
 /// <para>改版方法体（<c>LivingFogPatch.BloatMove</c>）和原版比有两处不同：</para>
 /// <list type="number">
-///   <item>每只生出来的气弹上 1 层 <c>PingPongPower</c>。少算这一层，求解器会以为打气弹不要钱，
+///   <item>每只生出来的气态炸弹上 1 层 <c>PingPongPower</c>。少算这一层，求解器会以为打气态炸弹不要钱，
 ///     实际打一下自己要挨一下。</item>
 ///   <item><c>BloatAmount</c> 每用一次 +1，上限 5。求解器读的是建根时冻结的静态值
 ///     （<c>combat.GetMonsterStaticInt</c>），一场战斗内不变，多回合的计划会越推越少算。</item>
@@ -32,7 +32,7 @@ namespace AutoRebalancedSpire;
 /// 求解器给第三方的模型状态登记点（<c>ModelPredictionStateMirrors</c>）只对遗物和修饰器开放，
 /// 怪物模型根本不会被 <c>CaptureRootState</c> 捕获，所以走不了那条路，直接用存储。</para>
 ///
-/// <para>第 k 次膨胀生的气弹数是 <c>min(建根时的 BloatAmount + (k-1), 5)</c>，
+/// <para>第 k 次膨胀生的气态炸弹数是 <c>min(建根时的 BloatAmount + (k-1), 5)</c>，
 /// 和改版那句 <c>BloatAmount = Math.Min(BloatAmount + 1, 5)</c> 对得上。</para>
 /// </remarks>
 internal static class BloatSpawnPatch
@@ -81,7 +81,7 @@ internal static class BloatSpawnPatch
             Creature bomb = MonsterSpawnSupport.Spawn<GasBomb>(simulator, combat, move.Owner, slot);
             combat.Apply<PingPongPower>(bomb, 1, move.Owner);
         }
-        // 这个前缀只接管迷雾这一支。同方法里另一支是偷东西的跳虫，和这里互斥，
+        // 这个前缀只接管活雾这一支。同方法里另一支是偷东西的偷窃草蜢，和这里互斥，
         // 所以直接跳过原实现不会漏掉它。
         return false;
     }

@@ -14,7 +14,7 @@ namespace AutoRebalancedSpire;
 /// </summary>
 /// <remarks>
 /// 原版 <c>Devoured</c> / <c>Weighted</c> 在 <c>AfterCardEnteredCombat</c> 里检查持有者还有没有
-/// 对应的 Power（饥饿 / 审视），没有就把自己从牌上清掉 —— 也就是说源头死了以后新进场的牌不该
+/// 对应的 Power（饥饿 / 细看），没有就把自己从牌上清掉 —— 也就是说源头死了以后新进场的牌不该
 /// 再带病症。
 ///
 /// 求解器这个时点是 <c>SimulatedCombatState.AfterCardEnteredCombat</c> 里一个写死的 switch，
@@ -52,7 +52,7 @@ internal static class CardEnteredCombatPatch
                 return;
         }
 
-        // 源头还在，新进场的牌要被感染。饥饿不碰能力牌，审视来者不拒。
+        // 源头还在，新进场的牌要被感染。饥饿不碰能力牌，细看来者不拒。
         if (hunger > 0 && card.Preview.Type != CardType.Power)
             simulator.Afflict<Devoured>(card, hunger);
         else if (scrutiny > 0)

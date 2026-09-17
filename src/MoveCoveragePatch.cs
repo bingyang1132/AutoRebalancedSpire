@@ -11,8 +11,8 @@ namespace AutoRebalancedSpire;
 /// </summary>
 /// <remarks>
 /// 求解器判断一条出招能不能模拟，看的是 <c>MonsterMoveEffects.Supports</c> 里那张写死的
-/// 「怪物类型名 + 招式 id」表。改版给 26 条出招换了新 id（拜尔多尼斯的发怒、信众祭司整套、
-/// 寄生蛙的增殖二三、组装师的逃跑……），这些 id 不在表里，于是整条出招被标成「不支持」，
+/// 「怪物类型名 + 招式 id」表。改版给 26 条出招换了新 id（多尼斯异鸟的愤怒、同族神官整套、
+/// 异蛙寄生虫的增殖二三、组装师的逃跑……），这些 id 不在表里，于是整条出招被标成「不支持」，
 /// 红字提示、路线不敢用。招式本身的效果在 <see cref="MonsterMirrors"/> 里已经逐条镜像了，
 /// 这里只是把它们补进那张表。
 ///
@@ -100,7 +100,7 @@ internal static class MoveCoveragePatch
     /// <summary>新招式要读、但求解器没捕获的怪物静态字段。</summary>
     /// <remarks>
     /// <c>Aeonglass.IncreasingIntensityTotalStrength</c> 本来就是原版字段，只是原版那一招
-    /// 不需要它，求解器没列进捕获清单；改版的渐强要按它给力量。
+    /// 不需要它，求解器没列进捕获清单；改版的加大力度要按它给力量。
     /// </remarks>
     private static readonly IReadOnlyDictionary<string, string[]> ExtraStaticIntMembers =
         new Dictionary<string, string[]>(StringComparer.Ordinal)

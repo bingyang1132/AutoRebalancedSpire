@@ -26,7 +26,7 @@ namespace AutoRebalancedSpire;
 /// 求解器这一段不在任何注册表里：<c>SimulatedCombatState.TriggerBaseSideTurnStart</c> 里
 /// 写死了「按 Decrement 减」，要不要减由调用方一个 <c>decrementPlating</c> 布尔参数决定，
 /// 而那个参数算的正是原版「非第一回合」的判据。所以改写这条最省的办法就是在前缀里改那个参数：
-/// 玩家侧强制成「有永恒护甲就不减，没有就减」，敌人侧一个字不动。
+/// 玩家侧强制成「有永恒铠甲就不减，没有就减」，敌人侧一个字不动。
 ///
 /// 镀甲是通用 Power（无色牌、Regent 牌、遗物、敌人都会给），算错就是整条防御线算错，
 /// 所以这条排在所有角色批前面。

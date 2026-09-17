@@ -11,11 +11,11 @@ using RebalancedSpire.Core.Powers;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 饥饿和审视施加/消失时，对**已经在场**的牌整批感染、整批清除。
+/// 饥饿和细看施加/消失时，对**已经在场**的牌整批感染、整批清除。
 /// </summary>
 /// <remarks>
 /// 这两个 Power 的 <c>AfterApplied</c> 会把持有者当时的每一张牌都感染一遍（饥饿跳过能力牌，
-/// 审视来者不拒，两者都只碰身上还没有病症的牌），<c>AfterRemoved</c> 再把自己那种病症全部清掉。
+/// 细看来者不拒，两者都只碰身上还没有病症的牌），<c>AfterRemoved</c> 再把自己那种病症全部清掉。
 /// <see cref="CardEnteredCombatPatch"/> 只管**新进场**的牌，管不到这两批。
 ///
 /// 挂在 <c>SimulatedCombatState.NormalizeCardAfflictions</c> 后面，而不是去追 Power 的施加时点：
@@ -28,7 +28,7 @@ namespace AutoRebalancedSpire;
 /// 这个形状，这里跟着它走，不另起一套。
 ///
 /// 层数按 Power 当前层数给，和实机一致。这两种病症的层数本身不参与任何结算
-/// （吞噬只是让饥饿给牌加「消耗」，称重只影响手牌上限），但层数进续接戳，
+/// （吞噬只是让饥饿给牌加「消耗」，沉重只影响手牌上限），但层数进续接戳，
 /// 对不上会让玩家每回合被强制重算。
 /// </remarks>
 internal static class PowerAfflictionPatch

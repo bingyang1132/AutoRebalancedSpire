@@ -10,7 +10,7 @@ using RebalancedSpire.Core.Powers;
 
 namespace AutoRebalancedSpire;
 
-/// <summary>同步+ 记过哪些球 id 已经给过聚焦。原版把这张表放在 Power 的内部数据里。</summary>
+/// <summary>同步+ 记过哪些球 id 已经给过集中。原版把这张表放在 Power 的内部数据里。</summary>
 internal sealed class ChanneledOrbState : IPredictionStateForkable
 {
     public HashSet<string> Ids { get; private set; } = [];
@@ -31,7 +31,7 @@ internal sealed class LastEvokedState(decimal value) : IPredictionStateForkable
 /// 两个和球打交道、而且带隐藏状态的新 Power。
 /// </summary>
 /// <remarks>
-/// 隐藏状态必须进指纹，否则求解器会把「已经给过聚焦」和「还没给过」的两个局面当成同一个，
+/// 隐藏状态必须进指纹，否则求解器会把「已经给过集中」和「还没给过」的两个局面当成同一个，
 /// 续接和剪枝都会错 —— 这正是求解器 0.33.0 开 <c>PowerHiddenStateMirrors</c> 的原因。
 /// 根状态从实机的 Power 上播种：同步+ 读它内部那张球 id 表，吞噬暗影+ 读它的私有字段。
 /// </remarks>
@@ -52,7 +52,7 @@ internal static class OrbPowerMirrors
         return 3;
     }
 
-    /// <summary>同步+：每channel一种**没见过的**球，给等于层数的聚焦。</summary>
+    /// <summary>同步+：每channel一种**没见过的**球，给等于层数的集中。</summary>
     private static void SynchronizePlus(
         SynchronizePlusPower power,
         AfterOrbChanneledMirrorContext context)

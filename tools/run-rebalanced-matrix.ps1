@@ -105,13 +105,13 @@ $cases = @(
         )
     },
     @{
-        # 永恒护甲给 11 点镀甲，外加一层「永恒护甲」标记（让镀甲不再每回合衰减）。
+        # 永恒铠甲给 11 点镀甲，外加一层「永恒铠甲」标记（让镀甲不再每回合衰减）。
         # 这里不断言格挡数值：镀甲是在回合结束前才转成格挡的，而
         # -ExpectedInitialMaxBlockAtLeast 量的是出牌阶段的峰值，两者不是一回事 ——
         # 试过断言 11，挂的是口径不是镜像。
         Id = "RS-ETERNAL-ARMOR-PLATING"
         Tags = @("cards", "global")
-        Why = "永恒护甲：11 点镀甲 + 一层不衰减标记。"
+        Why = "永恒铠甲：11 点镀甲 + 一层不衰减标记。"
         Args = @(
             "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("EternalArmor")),
@@ -139,10 +139,10 @@ $cases = @(
         )
     },
     @{
-        # 纺纱是求解器自己也登记了 bespoke 镜像的五张之一，这条盯的是「改写机制」有没有生效。
+        # 旋转工艺是求解器自己也登记了 bespoke 镜像的五张之一，这条盯的是「改写机制」有没有生效。
         Id = "RS-SPINNER-REPLACED-MIRROR"
         Tags = @("cards", "powers")
-        Why = "纺纱换成了纺纱+，求解器原有的镜像必须被换掉。"
+        Why = "旋转工艺换成了旋转工艺+，求解器原有的镜像必须被换掉。"
         Args = @(
             "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("Spinner")),
@@ -172,7 +172,7 @@ $cases = @(
     @{
         Id = "RS-CORPSE-EXPLOSION-POISON"
         Tags = @("newcards", "powers")
-        Why = "尸爆是新加的牌：给目标上毒，再挂一层「死了炸全场」。"
+        Why = "尸爆术是新加的牌：给目标上毒，再挂一层「死了炸全场」。"
         Args = @(
             "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("CorpseExplosion")),
@@ -180,14 +180,14 @@ $cases = @(
         )
     },
     @{
-        # 必然结局+ 会在**每个回合开始**开一次「从抽牌堆挑几张放牌堆顶」的选择。
+        # 既定事项+ 会在**每个回合开始**开一次「从抽牌堆挑几张放牌堆顶」的选择。
         # 这条盯的不是某个数值，而是那条通道本身走不走得通：选择要能开出分支、
         # 能被计划记下来、跨回合重放时顺序要对得上。任何一处抛异常这条就挂。
         # 不清牌堆 —— 抽牌堆空了这一招就没有候选，通道根本不会被走到。
         Id = "RS-FOREGONE-CONCLUSION-DRAW-TOP"
         Character = "REGENT"
         Tags = @("cards", "powers", "choices")
-        Why = "必然结局+：每回合开始从抽牌堆挑牌放堆顶，走求解器的选牌通道。"
+        Why = "既定事项+：每回合开始从抽牌堆挑牌放堆顶，走求解器的选牌通道。"
         Args = @(
             "-EnemyCurrentHp", "60", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("ForegoneConclusion")),
@@ -195,12 +195,12 @@ $cases = @(
         )
     },
     @{
-        # 周密计划+ 的选择开在**回合结束清手牌之前**，那个时点求解器原本一条钩子都不跑。
+        # 计划妥当+ 的选择开在**回合结束清手牌之前**，那个时点求解器原本一条钩子都不跑。
         # 同样盯通道：挂在 RunPhaseOne 后面的那次挂起要能被上层当成搜索边界接住。
         Id = "RS-WELL-LAID-PLANS-RETAIN"
         Character = "SILENT"
         Tags = @("cards", "powers", "choices")
-        Why = "周密计划+：回合结束前挑最多 N 张一次性保留。"
+        Why = "计划妥当+：回合结束前挑最多 N 张一次性保留。"
         Args = @(
             "-EnemyCurrentHp", "60", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("WellLaidPlans")),
@@ -208,14 +208,14 @@ $cases = @(
         )
     },
     @{
-        # 迷雾的「膨胀」在改版里有两处变化，都落在召唤那半截上：
-        #   1. 每只生出来的气弹挂 1 层「乒乓」——不算的话求解器以为打气弹不要钱，实际要挨反伤。
+        # 活雾的「膨胀」在改版里有两处变化，都落在召唤那半截上：
+        #   1. 每只生出来的气态炸弹挂 1 层「乒乓」——不算的话求解器以为打气态炸弹不要钱，实际要挨反伤。
         #   2. BloatAmount 每用一次 +1（上限 5）——求解器读的是建根时冻结的静态值，一场里不变。
         # 召唤那半截在 MonsterMoveEffects.ApplyBeforeAttack 里，MonsterMirrors 的前缀够不着，
         # 所以另开了 BloatSpawnPatch；递增靠 StateStore 上一个按分支复制的计数。
         #
-        # 迷雾的出招是「首招 → 膨胀 → 蓄力 → 膨胀 → …」，所以第二回合就膨胀一次。
-        # 断言盯的是「第二回合直接复用首轮计划、一次都没重算」：气弹数、乒乓层数任一算错，
+        # 活雾的出招是「首招 → 膨胀 → 蓄力 → 膨胀 → …」，所以第二回合就膨胀一次。
+        # 断言盯的是「第二回合直接复用首轮计划、一次都没重算」：气态炸弹数、乒乓层数任一算错，
         # 实机一到第二回合就和预测对不上，必然重算。
         #
         # **递增这一半这条用例没覆盖**：那要跑到第二次膨胀（第四回合），而计划排不到那么远，
@@ -225,7 +225,7 @@ $cases = @(
         Character = "SILENT"
         Tags = @("monsters")
         Full = $true
-        Why = "迷雾的膨胀：气弹要挂乒乓，张数要逐次递增。"
+        Why = "活雾的膨胀：气态炸弹要挂乒乓，张数要逐次递增。"
         Args = @(
             "-EnemyCurrentHp", "200", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", '[{"cardId":"StrikeSilent","pile":"Hand","count":5},{"cardId":"StrikeSilent","pile":"Draw","count":15}]',
@@ -235,7 +235,7 @@ $cases = @(
         )
     },
     @{
-        # 无尽之刃+ 让手牌上限随手里的匕首数变。求解器的上限是建根时冻结的，
+        # 无尽刀刃+ 让手牌上限随手里的匕首数变。求解器的上限是建根时冻结的，
         # 这条盯的是那份「按当前分支重算」的补丁在整条搜索里不会把上限算成负数或抛出来。
         # 藏匿匕首的效果被一个玩家选择劈成两段：先从手牌选几张弃掉，**选完之后**才造匕首。
         # 我们原来的镜像在出牌那一刻就把匕首造进手牌，顺序反了。后果不是差一点数值：模拟里
@@ -273,7 +273,7 @@ $cases = @(
         Id = "RS-INFINITE-BLADES-HAND-SIZE"
         Character = "SILENT"
         Tags = @("cards", "powers", "global")
-        Why = "无尽之刃+：手牌上限随手里的匕首数变，求解器原本冻结。"
+        Why = "无尽刀刃+：手牌上限随手里的匕首数变，求解器原本冻结。"
         Args = @(
             "-EnemyCurrentHp", "60", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("InfiniteBlades")),
@@ -404,18 +404,18 @@ $cases = @(
         )
     },
     @{
-        # 魂枢挂的那一条：汲取生命在改版里只剩一刀，原版跟着的易伤 2、虚弱 2 都没了。
+        # 灵魂枢纽挂的那一条：汲取生命在改版里只剩一刀，原版跟着的易伤 2、虚弱 2 都没了。
         # 求解器照原版口径白给玩家两层减益，一到实机就对不上。
-        # 汲取生命是魂枢的第三招，所以这条得跑到第四回合。
+        # 汲取生命是灵魂枢纽的第三招，所以这条得跑到第四回合。
         Id = "RS-SOUL-NEXUS-NO-REPLAN"
         Encounter = "SOUL_NEXUS_ELITE"
         Tags = @("monsters")
         Full = $true
-        Why = "魂枢：汲取生命不再带减益，算多了就整局重算。"
+        Why = "灵魂枢纽：汲取生命不再带减益，算多了就整局重算。"
         Args = @(
             "-EnemyCurrentHp", "254",
-            # 必须把魂枢的攻击全挡下来。「枯魂」数的是**没挡住**的强化攻击次数，
-            # 满 12 次它就改出「魂印」—— 用初始牌组跑的话两回合就满了（灵魂打击 5 次 +
+            # 必须把灵魂枢纽的攻击全挡下来。「灵魂凋亡」数的是**没挡住**的强化攻击次数，
+            # 满 12 次它就改出「灵魂标记」—— 用初始牌组跑的话两回合就满了（灵魂打击 5 次 +
             # 漩涡 12 次），根本轮不到汲取生命，这条就白跑了。挡满之后才是
             # 灵魂打击 → 漩涡 → 汲取生命，第四回合开头才能看出减益多没多。
             "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
@@ -426,27 +426,27 @@ $cases = @(
         )
     },
     @{
-        # 亲族随从：改版给它加了一条条件分支，但忘了把分支本身加进状态列表。
+        # 同族信徒：改版给它加了一条条件分支，但忘了把分支本身加进状态列表。
         # machine.States 里没有 "KinFollower"，求解器建根时抄不到这条分支的选择，
         # 推进到它时抛「没有根选择」—— 整场算不出来。
         Id = "RS-KIN-FOLLOWER-BRANCH"
         Encounter = "THE_KIN_BOSS"
         Tags = @("monsters")
-        Why = "亲族随从的分支根本不在状态表里，整场算不出来。"
+        Why = "同族信徒的分支根本不在状态表里，整场算不出来。"
         Args = @(
             "-ExpectedInitialUnmirroredCount", "0"
         )
     },
     @{
-        # 亲族祭司第 1 回合召两只信徒，改版在 AfterAddedToRoom 里改了它们的血：
-        # 不跳舞的乘 1.5，跳舞的那只挂「假随从」再减半。镜像不跟这一步，第 2 回合
-        # 开头就有三处对不上（两只的血、外加那层假随从），整局重算。
+        # 同族祭司第 1 回合召两只信徒，改版在 AfterAddedToRoom 里改了它们的血：
+        # 不跳舞的乘 1.5，跳舞的那只挂「爪牙?」再减半。镜像不跟这一步，第 2 回合
+        # 开头就有三处对不上（两只的血、外加那层爪牙?），整局重算。
         # 断言必须落在第 2 回合：第 1 回合信徒还没进场，开局那一下什么都看不出来。
         Id = "RS-KIN-SUMMON-HP"
         Encounter = "THE_KIN_BOSS"
         Tags = @("monsters")
         Full = $true
-        Why = "亲族信徒召出来是 1.5 倍和 0.5 倍血，不是原版那份。"
+        Why = "同族信徒召出来是 1.5 倍和 0.5 倍血，不是原版那份。"
         Args = @(
             "-ExpectedReusedTurn", "2",
             "-ExpectedUnexpectedReplansAtMost", "0",
@@ -454,15 +454,15 @@ $cases = @(
         )
     },
     @{
-        # 千足虫：改版的鼓胀只给自己 1 力量，原版是 2。三节起手招式各不相同，
-        # 中间那节第一回合就鼓胀，所以第二回合开头就能看出差一。
+        # 残杀千足虫：改版的胀大只给自己 1 力量，原版是 2。三节起手招式各不相同，
+        # 中间那节第一回合就胀大，所以第二回合开头就能看出差一。
         # 顺带盯住一件事：这里 switch 的是 GetType().Name，在场的是
         # DecimillipedeSegmentFront/Middle/Back，写基类名的分支一次都不会命中。
         Id = "RS-DECIMILLIPEDE-BULK-STRENGTH"
         Encounter = "DECIMILLIPEDE_ELITE"
         Tags = @("monsters")
         Full = $true
-        Why = "千足虫的鼓胀改成 1 力量，算成 2 就每回合重算。"
+        Why = "残杀千足虫的胀大改成 1 力量，算成 2 就每回合重算。"
         Args = @(
             "-EnemyCurrentHp", "999",
             "-ExpectedReusedTurn", "2",
@@ -471,14 +471,14 @@ $cases = @(
         )
     },
     @{
-        # 无餍之物：液化给玩家 5 层「长距离」，这层在自己侧回合开始时掉 1。
+        # 无餍之物：液化地面给玩家 5 层「遥远距离」，这层在自己侧回合开始时掉 1。
         # 求解器的 TriggerAfterSideTurnStart 只有倒计时和流沙坑两条写死的处理，
         # 认不出就静默不衰减，于是从第二回合起层数一直对不上。
         Id = "RS-INSATIABLE-LONG-DISTANCE-TICK"
         Encounter = "THE_INSATIABLE_BOSS"
         Tags = @("monsters")
         Full = $true
-        Why = "长距离每回合掉一层，不衰减就每回合重算。"
+        Why = "遥远距离每回合掉一层，不衰减就每回合重算。"
         Args = @(
             "-EnemyCurrentHp", "999",
             "-ExpectedReusedTurn", "2",
@@ -487,16 +487,16 @@ $cases = @(
         )
     },
     @{
-        # 胧光怪：改版的恐惧蛛进场除了原版那层幻影，还多 4 层「幻灭」——复活时按这个层数
-        # 扣自己的力量。求解器召唤幻影走的是它自己写死的那份进场 Power，认不出改版加的这层，
-        # 第 2 回合（幻影刚进场）开头就对不上。
+        # 胧光怪：改版的寄生惧魔进场除了原版那层幻象，还多 4 层「幻灭」——复活时按这个层数
+        # 扣自己的力量。求解器召唤幻象走的是它自己写死的那份进场 Power，认不出改版加的这层，
+        # 第 2 回合（幻象刚进场）开头就对不上。
         # 光这一条还盯不住死亡那半：幻灭是减益又声明「主人死了也不走」，求解器那条判据会把它
-        # 清成 0。那半要恐惧蛛真死一次才看得见，这里只压住进场。
+        # 清成 0。那半要寄生惧魔真死一次才看得见，这里只压住进场。
         Id = "RS-OBSCURA-ILLUSION-DISILLUSION"
         Encounter = "THE_OBSCURA_NORMAL"
         Tags = @("monsters")
         Full = $true
-        Why = "恐惧蛛进场带 4 层幻灭，漏了就每回合重算。"
+        Why = "寄生惧魔进场带 4 层幻灭，漏了就每回合重算。"
         Args = @(
             "-EnemyCurrentHp", "999",
             "-ExpectedReusedTurn", "2",
@@ -505,16 +505,16 @@ $cases = @(
         )
     },
     @{
-        # 长距离：自己打出一张仓皇逃窜就涨一层。求解器的 AfterCardPlayed 是注册表，没登记
+        # 遥远距离：自己打出一张狂乱逃离就涨一层。求解器的 AfterCardPlayed 是注册表，没登记
         # 就每打一张牌记一条未镜像风险（COVERAGE ... method=AfterCardPlayed
-        # reason=MethodNotMirrored），数值照样按没涨算 —— 沙虫那一场长距离层数和奥斯提
+        # reason=MethodNotMirrored），数值照样按没涨算 —— 无厌沙虫那一场遥远距离层数和奥斯提
         # 掉的血同时错，根因就是这一条。
-        # 这里盯的是「有没有登记」而不是「涨得对不对」：涨层要真打出仓皇逃窜才看得见，
+        # 这里盯的是「有没有登记」而不是「涨得对不对」：涨层要真打出狂乱逃离才看得见，
         # 而那是张状态牌，求解器打不打由它自己的估值决定，锁不住（见 docs/coverage-gaps.md）。
         Id = "RS-LONG-DISTANCE-CARD-PLAYED-MIRROR"
         Character = "NECROBINDER"
         Tags = @("powers")
-        Why = "长距离的 AfterCardPlayed 必须登记，否则每打一张牌记一条未镜像。"
+        Why = "遥远距离的 AfterCardPlayed 必须登记，否则每打一张牌记一条未镜像。"
         Args = @(
             "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
             "-CardsJson", (Hand @("StrikeNecrobinder")),
@@ -523,14 +523,14 @@ $cases = @(
         )
     },
     @{
-        # 方块构造体：连发炮击一/二在改版里只剩那一炮，原版还各给自己 2 力量。
+        # 方柱构装体：重复轰击一/二在改版里只剩那一炮，原版还各给自己 2 力量。
         # 求解器照原版口径给，一回合就多 2 点力量，下一回合开头对不上。
-        # 招式顺序是蓄能 → 连发一 → 连发二 → 吐出，所以第三回合开头才能看出来。
+        # 招式顺序是蓄能 → 重复轰击一 → 重复轰击二 → 排出，所以第三回合开头才能看出来。
         Id = "RS-CUBEX-NO-REPLAN"
         Encounter = "CUBEX_CONSTRUCT_NORMAL"
         Tags = @("monsters")
         Full = $true
-        Why = "方块构造体：连发炮击不再给力量，算多了就整局重算。"
+        Why = "方柱构装体：重复轰击不再给力量，算多了就整局重算。"
         Args = @(
             "-EnemyCurrentHp", "120",
             "-ExpectedReusedTurn", "3",
@@ -539,15 +539,34 @@ $cases = @(
         )
     },
     @{
-        # 寄生蛙精英：寄生+ 的 AfterDeath 没登记，求解器一发现能打赢的路线上
+        # 异蛙寄生虫精英：寄生物+ 的 AfterDeath 没登记，求解器一发现能打赢的路线上
         # 有没镜像的死亡钩子，就把路线标成 UnsupportedEffect 边界、不敢往下算，
         # 路线只剩半个回合，打完就「计划用尽」重算。
         Id = "RS-PHROG-DEATH-COVERAGE"
         Encounter = "PHROG_PARASITE_ELITE"
         Tags = @("monsters")
-        Why = "寄生+ 的死亡钩子没登记，打赢的路线会被截短。"
+        Why = "寄生物+ 的死亡钩子没登记，打赢的路线会被截短。"
         Args = @(
             "-EnemyCurrentHp", "66",
+            "-ExpectedInitialUnmirroredCount", "0"
+        )
+    },
+    @{
+        # 多尼斯异鸟：愤怒会给牌组里的多尼斯异鸟蛋挂上「物归原主」，那张卵从此可以打出
+        # （病症的 AfterApplied 去掉「不可打出」，改版另一个补丁把目标改成单体敌人）。
+        # 打出它就把异鸟直接移出战斗，这场精英战当场结束。病症的 OnPlay 没登记的话，
+        # 求解器眼里这张卵是一张什么都不干的牌，打赢的那条线根本不存在。
+        Id = "RS-BYRDONIS-EGG-RETURN"
+        Encounter = "BYRDONIS_ELITE"
+        Tags = @("cards")
+        Full = $true
+        Why = "打出被标记的卵直接结束精英战，不镜像就看不见这条线。"
+        Args = @(
+            "-EnemyCurrentHp", "999",
+            "-ClearPlayerPiles",
+            "-InitialPlayerEnergy", "3",
+            "-CardsJson", '[{"cardId":"ByrdonisEgg","pile":"Hand","afflictionId":"ToItsOriginOwner"}]',
+            "-ExpectedPlayedCardId", "BYRDONIS_EGG",
             "-ExpectedInitialUnmirroredCount", "0"
         )
     }

@@ -39,11 +39,11 @@ internal static class MonsterReactionMirrors
         return 5;
     }
 
-    /// <summary>耕耘+：祭祀之兽被打到剩血低于阈值时清空力量、眩晕一回合并换招。</summary>
+    /// <summary>横冲直撞+：祭祀之兽被打到剩血低于阈值时清空力量、眩晕一回合并换招。</summary>
     /// <remarks>
     /// 和原版的犁击（<c>PlowPower</c>）差三处：只清 <c>StrengthPower</c>（原版连临时力量一起清）、
-    /// 换的那一招看自己身上有没有「已耕耘」（有就是野兽咆哮，没有就是第二踏），
-    /// 以及事后给自己挂一层「已耕耘」，所以第二次触发走的是另一条分支。
+    /// 换的那一招看自己身上有没有「已横冲直撞」（有就是野兽咆哮，没有就是第二踏），
+    /// 以及事后给自己挂一层「已横冲直撞」，所以第二次触发走的是另一条分支。
     /// </remarks>
     private static void PlowPlus(PlowPlusPower power, AfterDamageReceivedMirrorContext context)
     {
@@ -98,7 +98,7 @@ internal static class MonsterReactionMirrors
 
     /// <summary>组装师：自己造的机器人被打死时，立刻改成再造一台。</summary>
     /// <remarks>
-    /// 三个条件照实机抄：死的那只带「随从」、组装师自己血还够再造（同它的自伤判据）、
+    /// 三个条件照实机抄：死的那只带「爪牙」、组装师自己血还够再造（同它的自伤判据）、
     /// 同侧活着的不到 4 个、并且组装师这一招本来是要攻击的（只有要攻击的那一招才值得被打断）。
     ///
     /// <c>IntendsToAttack</c> 在实机里就是「下一招的意图里有攻击或致命一击」，
@@ -141,7 +141,7 @@ internal static class MonsterReactionMirrors
     /// <remarks>
     /// 这条**看上去**不用镜像：取值类的钩子（<c>Modify*</c>）在监听者过滤被关掉之后会回落到
     /// Power 自己的实现，自动跟随改版 —— 前提是那份实现只读求解器喂给它的东西。
-    /// 这一条不是：它读的是 <c>CombatState.Enemies</c> 里每只怪**实机当下**的死活和身上的随从层数。
+    /// 这一条不是：它读的是 <c>CombatState.Enemies</c> 里每只怪**实机当下**的死活和身上的爪牙层数。
     ///
     /// 于是求解器在第一回合做计划时问它「第二回合这一刀打多少」，它照第一回合的实机局面回答
     /// 「场上没有机器人，不减半」，而第二回合实机已经有两台了 —— 计划里那一刀算成双倍，
@@ -252,7 +252,7 @@ internal static class MonsterReactionMirrors
         => combat.GetCustomMonsterInt(priest.Creature, SpeechUsedKey) != 0
            || priest.SpeechUsed;
 
-    /// <summary>假随从：同伴全死光之后自己也跑。</summary>
+    /// <summary>「爪牙?」：同伴全死光之后自己也跑。</summary>
     private static void MinionFakeDeath(MinionFakePower power, AfterDeathMirrorContext context)
     {
         if (context.WasRemovalPrevented || ReferenceEquals(context.Creature, power.Owner))

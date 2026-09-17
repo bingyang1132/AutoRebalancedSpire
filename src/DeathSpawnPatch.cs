@@ -10,7 +10,7 @@ using RebalancedSpire.Core.Powers;
 namespace AutoRebalancedSpire;
 
 /// <summary>
-/// 寄生蛙精英死后生出来的那批蠕虫。
+/// 异蛙寄生虫精英死后生出来的那批蠕虫。
 /// </summary>
 /// <remarks>
 /// 原版 <c>InfestedPower</c> 死时固定生 4 只；改版换成 <c>InfestedPlusPower</c>，生的数量是

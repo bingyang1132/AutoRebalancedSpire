@@ -14,7 +14,7 @@ namespace AutoRebalancedSpire;
 /// 求解器这个时点是 <c>TurnStartPowerSupport.TriggerAfterSideTurnStart</c>，里面只有倒计时和
 /// 流沙坑两条写死的处理，没有第三方入口，认不出的 Power 一声不吭地跳过。
 ///
-/// 现在只有「长距离」一条：它在自己人的侧回合开始时走
+/// 现在只有「遥远距离」一条：它在自己人的侧回合开始时走
 /// <c>PowerCmd.TickDownDuration</c> 掉一层。不镜像的话求解器会一直按施加时的层数算伤害倍率，
 /// 而层数每回合都在降 —— 无餍之物那一场每回合都会因为这一处对不上而重算。
 /// </remarks>

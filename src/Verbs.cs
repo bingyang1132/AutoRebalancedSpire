@@ -36,7 +36,7 @@ internal static class Verbs
     /// <summary>读牌上的动态变量。键不存在时报出这张牌和它实际有哪些键。</summary>
     /// <remarks>
     /// RebalancedSpire 经常在替换 OnPlay 的同时换掉 CanonicalVars，键名跟原版不一样
-    /// （例如纺纱换成了 SpinnerPlusPower）。直接索引字典的话，键写错只会在结算到这张牌时
+    /// （例如旋转工艺换成了 SpinnerPlusPower）。直接索引字典的话，键写错只会在结算到这张牌时
     /// 抛一个不带上下文的 KeyNotFound。
     /// </remarks>
     public static DynamicVar RequireVar(CardModel card, string key)

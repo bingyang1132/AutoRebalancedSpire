@@ -28,7 +28,7 @@ internal readonly record struct AfterEnergyResetLateContext(
 /// 这个文件就该删掉换成登记。
 ///
 /// **和原版的次序差异**：原版是所有监听者（遗物和 Power）在同一条监听链上按顺序结算，
-/// 这里是「求解器的遗物那段先跑完，再跑我们的 Power」。目前唯一的 Power 是往世
+/// 这里是「求解器的遗物那段先跑完，再跑我们的 Power」。目前唯一的 Power 是来生
 /// （召唤或治疗奥斯提），和 <c>BoundPhylactery</c>（也召唤奥斯提）同场时次序会有影响，
 /// 真遇上再收紧。
 /// </remarks>
@@ -69,7 +69,7 @@ internal static class AfterEnergyResetLateDispatch
         }
     }
 
-    /// <summary>往世：奥斯提不在场就按 Summon 召唤一只，在场就按 Heal 治疗它。</summary>
+    /// <summary>来生：奥斯提不在场就按 Summon 召唤一只，在场就按 Heal 治疗它。</summary>
     /// <remarks>
     /// 原版判的是 <c>player.IsOstyMissing || player.Osty == null</c>。分支里对应的说法是
     /// 「拿不到奥斯提，或者拿到了但已经死了」。两个变量都挂在 Power 自己身上，

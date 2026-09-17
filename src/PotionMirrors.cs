@@ -80,7 +80,7 @@ internal static class PotionMirrors
     /// <remarks>
     /// <c>PowerVar&lt;T&gt;</c> 的单参构造按**类型名**建键（<c>StrengthPower</c>），
     /// 而声明它的代码通常用短名访问器（<c>DynamicVars.Strength</c>）去读。两种键都试一遍，
-    /// 都没有就把这张牌上实际有哪些变量报出来 —— 这个坑在尸爆上踩过一次，
+    /// 都没有就把这张牌上实际有哪些变量报出来 —— 这个坑在尸爆术上踩过一次，
     /// 当时的报错只说「找不到」，查了很久才知道键名是什么。
     /// </remarks>
     private static int ReadPowerVar(PotionModel potion, string shortName)

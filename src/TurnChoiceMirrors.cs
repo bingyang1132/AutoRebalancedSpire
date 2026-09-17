@@ -19,7 +19,7 @@ namespace AutoRebalancedSpire;
 /// </remarks>
 internal static class TurnChoiceMirrors
 {
-    /// <summary>从抽牌堆挑固定张数放到牌堆顶（必然结局+）。</summary>
+    /// <summary>从抽牌堆挑固定张数放到牌堆顶（既定事项+）。</summary>
     public static bool ResolveMoveToDrawTop(
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
@@ -66,7 +66,7 @@ internal static class TurnChoiceMirrors
         return true;
     }
 
-    /// <summary>从手牌里挑最多若干张给一次性保留（周密计划+）。可以一张都不挑。</summary>
+    /// <summary>从手牌里挑最多若干张给一次性保留（计划妥当+）。可以一张都不挑。</summary>
     public static bool ResolveSingleTurnRetain(
         CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
