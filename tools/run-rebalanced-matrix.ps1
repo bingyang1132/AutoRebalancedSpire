@@ -487,6 +487,65 @@ $cases = @(
         )
     },
     @{
+        # 胧光怪：改版的恐惧蛛进场除了原版那层幻影，还多 4 层「幻灭」——复活时按这个层数
+        # 扣自己的力量。求解器召唤幻影走的是它自己写死的那份进场 Power，认不出改版加的这层，
+        # 第 2 回合（幻影刚进场）开头就对不上。
+        # 光这一条还盯不住死亡那半：幻灭是减益又声明「主人死了也不走」，求解器那条判据会把它
+        # 清成 0。那半要恐惧蛛真死一次才看得见，这里只压住进场。
+        Id = "RS-OBSCURA-ILLUSION-DISILLUSION"
+        Encounter = "THE_OBSCURA_NORMAL"
+        Tags = @("monsters")
+        Full = $true
+        Why = "恐惧蛛进场带 4 层幻灭，漏了就每回合重算。"
+        Args = @(
+            "-EnemyCurrentHp", "999",
+            "-ExpectedReusedTurn", "2",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
+        # 往世：改版把治疗量和召唤血量挂在 Power 自己的两个动态变量上，由
+        # AfterPowerAmountChanged 同步成数量和数量−1。求解器这个时点是一张写死的 switch，
+        # 第三方进不去，于是两个变量停在建实例那一刻（0 和 −1）：既进续接戳每回合重算，
+        # 奥斯提也会被治 0 点。
+        # 断言要落在第 2 回合：第 1 回合打出往世时两边都还没结算到那两个变量。
+        Id = "RS-AFTERLIFE-OSTY-VARS"
+        Encounter = "AXEBOTS_NORMAL"
+        Character = "NECROBINDER"
+        Tags = @("cards", "powers")
+        Full = $true
+        Why = "往世的治疗量/召唤血量要跟着层数走，不同步就每回合重算。"
+        Args = @(
+            "-EnemyCurrentHp", "999", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("Afterlife")),
+            "-ExpectedPlayedCardId", "AFTERLIFE",
+            "-ExpectedReusedTurn", "2",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
+        # 长距离：自己打出一张仓皇逃窜就涨一层。求解器的 AfterCardPlayed 是注册表，
+        # 认不出第三方 Power 时只记一条风险，数值照样按没涨算 —— 沙虫那一场每打一张
+        # 仓皇逃窜就差一层，伤害倍率跟着全错。
+        # 液化是沙虫的起手招式，第 1 回合结束就给玩家 5 层长距离和 6 张仓皇逃窜，
+        # 所以第 2 回合就能打出来。
+        Id = "RS-LONG-DISTANCE-FRANTIC-ESCAPE"
+        Encounter = "THE_INSATIABLE_BOSS"
+        Character = "NECROBINDER"
+        Tags = @("monsters", "powers")
+        Full = $true
+        Why = "打出仓皇逃窜要给长距离加一层，漏了每打一张就重算。"
+        Args = @(
+            "-EnemyCurrentHp", "999",
+            "-ExpectedPlayedCardId", "FRANTIC_ESCAPE",
+            "-ExpectedReusedTurn", "3",
+            "-ExpectedUnexpectedReplansAtMost", "0",
+            "-StopAfterExpectedReuse"
+        )
+    },
+    @{
         # 方块构造体：连发炮击一/二在改版里只剩那一炮，原版还各给自己 2 力量。
         # 求解器照原版口径给，一回合就多 2 点力量，下一回合开头对不上。
         # 招式顺序是蓄能 → 连发一 → 连发二 → 吐出，所以第三回合开头才能看出来。

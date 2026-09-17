@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -67,6 +67,8 @@ internal static class AdapterSelfCheck
             _ = BloatSpawnPatch.ResolveTarget();
             _ = AdaptedSnapshotFallbackPatch.ResolveTarget();
             _ = HiddenDaggersShivPatch.ResolveTarget();
+            _ = PowerAmountChangedDispatch.ResolveTarget();
+            _ = DeathPowerRetentionPatch.ResolveTarget();
         }
         catch (MissingMethodException ex)
         {

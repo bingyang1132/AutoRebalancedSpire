@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -35,7 +35,8 @@ internal static class PowerMirrors
         AfterCardDiscardedMirrors.Registry.Register<MasterPlannerPlusPower>(MasterPlannerPlus);
         AfterDamageGivenMirrors.Registry.Register<ReaperFormPlusPower>(ReaperFormPlus);
         AfterDamageGivenMirrors.Registry.Register<SicEmPlusPower>(SicEmPlus);
-        return 4;
+        AfterCardPlayedMirrors.Registry.Register<LongDistancePower>(LongDistance);
+        return 5;
     }
 
     private const string HandDrawName = nameof(TurnStartPowerSupport.TriggerBeforeHandDraw);
@@ -109,6 +110,42 @@ internal static class PowerMirrors
             }
         }
     }
+
+    /// <summary>长距离：自己打出一张仓皇逃窜就涨一层，涨到 11 层沙虫直接退场。</summary>
+    /// <remarks>
+    /// 这一层数是伤害倍率的唯一输入（挨打和打沙虫各一条曲线），少算一层整场的伤害预期全错。
+    /// 求解器自己会报 <c>COVERAGE source=..._LONG_DISTANCE_POWER method=AfterCardPlayed
+    /// reason=MethodNotMirrored</c>，但那只是记一条风险，数值照样按没涨算。
+    ///
+    /// 涨层走 <c>SetPowerAmount</c> 而不是 <c>Apply</c>：原版这里用的是
+    /// <c>PowerCmd.ModifyAmount</c>，不过遗物的施加修正，也不吃神器。
+    ///
+    /// 11 层那一段原版是「沙虫吃饱走人」：把场上所有沙虫移出战斗，另外发一瓶药水和一个稀有
+    /// 遗物。退场用求解器的逃跑口径镜像；两份局外奖励没有镜像，求解器的长期收益会低估这条路线。
+    /// </remarks>
+    private static void LongDistance(LongDistancePower power, AfterCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard is not FranticEscape)
+            return;
+        if (context.PreviewCard.Owner.Creature != power.Owner)
+            return;
+        if (context.CombatState is not SimulatedCombatState combat)
+            return;
+
+        // SetPowerAmount 改的是分支里那份可变实例，power 自己可能还是根上的只读副本，
+        // 所以阈值要重新读一遍。
+        combat.SetPowerAmount(power, power.Amount + 1);
+        if (combat.GetAmount<LongDistancePower>(power.Owner) < LongDistanceEscapeAmount)
+            return;
+        foreach (Creature enemy in combat.Enemies.ToArray())
+        {
+            if (enemy.Monster is TheInsatiable)
+                combat.CreatureEscaped(enemy);
+        }
+    }
+
+    /// <summary>改版写死的 <c>LongDistancePower.MaxAmount</c>。</summary>
+    private const int LongDistanceEscapeAmount = 11;
 
     /// <summary>神机妙算+：弃掉一张带「狡诈」的牌时抽等量的牌。</summary>
     private static void MasterPlannerPlus(

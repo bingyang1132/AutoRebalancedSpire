@@ -72,6 +72,9 @@ internal static class MonsterMirrors
         combat.SetPowerAmount(power, 0);
     }
 
+    /// <summary>改版 <c>ParafrightPatch.AfterAddedToRoom</c> 里写死的幻灭层数。</summary>
+    private const int DisillusionAmount = 4;
+
     public static MethodInfo ResolveReviveTarget()
         => AccessTools.Method(
                typeof(SimulatedCombatState),
@@ -171,6 +174,17 @@ internal static class MonsterMirrors
                 simulator.AddToCombat<FranticEscape>(player, PileType.Discard, 3, null, CardPilePosition.Random);
                 __result = true;
                 return false;
+
+            // 幻象：召唤恐惧蛛那半和原版一样，改版多给它 4 层「幻灭」——复活时按这个层数扣力量。
+            case ("TheObscura", "ILLUSION_MOVE") when settings.TheObscura:
+            {
+                Creature illusion = MonsterSpawnSupport.Spawn<Parafright>(
+                    simulator, combat, owner, "illusion");
+                combat.Apply<DisillusionPower>(illusion, DisillusionAmount, illusion);
+                combat.SetMonsterBool(owner, "_hasSummoned", true);
+                __result = true;
+                return false;
+            }
 
             // 猛击：原版 3 力量；改版 2。
             case ("LivingShield", "SMASH_MOVE") when settings.TurretOperator:

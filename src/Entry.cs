@@ -233,6 +233,18 @@ public static class Entry
                 SideTurnStartDispatch.ResolveTarget(),
                 postfix: new HarmonyMethod(
                     typeof(SideTurnStartDispatch), nameof(SideTurnStartDispatch.Postfix)));
+            // Power 自己数量变了要跟着改的动态变量：往世的治疗量和召唤血量。
+            harmony.Patch(
+                PowerAmountChangedDispatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(PowerAmountChangedDispatch), nameof(PowerAmountChangedDispatch.Postfix)));
+            // 死亡清理 Power：幻灭声明了主人死了也不走，求解器那条判据把它覆盖掉了。
+            harmony.Patch(
+                DeathPowerRetentionPatch.ResolveTarget(),
+                prefix: new HarmonyMethod(
+                    typeof(DeathPowerRetentionPatch), nameof(DeathPowerRetentionPatch.Prefix)),
+                postfix: new HarmonyMethod(
+                    typeof(DeathPowerRetentionPatch), nameof(DeathPowerRetentionPatch.Postfix)));
             // 饥饿/审视施加与消失时，对已经在场的牌整批感染、整批清除。
             harmony.Patch(
                 PowerAfflictionPatch.ResolveTarget(),

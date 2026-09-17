@@ -1,4 +1,4 @@
 
-23:31:33 开始 共 1 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
-23:32:45 [1/1] RS-LIVING-FOG-BLOAT 通过
-23:32:45 结束 通过 1/1 未通过 0 未运行 0
+20:01:18 开始 共 1 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
+20:03:37 [1/1] RS-OBSCURA-ILLUSION-DISILLUSION 未通过
+20:03:37 结束 通过 0/1 未通过 1 未运行 0
