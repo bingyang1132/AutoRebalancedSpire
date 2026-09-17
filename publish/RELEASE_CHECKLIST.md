@@ -68,10 +68,13 @@
       RitsuLib `3747602295`、平衡尖塔 `3747498062`、求解器 `3790899961`
 - [x] 上传工作区 `ModUploader-win-x64/AutoRebalancedSpireWorkshop/`：
       `workshop.json` + `content/`（`AutoRebalancedSpire.dll`、`AutoRebalancedSpire.json`、
-      `THIRD_PARTY_NOTICES.md`）。缺 `image.png`
-- [ ] 首次上传。首次建议 `visibility` 保持 `private`，自己订阅装一遍确认能加载，
-      确认了再改 `public` 重传。上传成功后工作区会生成 `mod_id.txt`，**别删**
-- [ ] 上传前要确认 Steam 客户端开着并已登录
+      `THIRD_PARTY_NOTICES.md`、`image.png`）
+- [x] 首次上传完成（2026-09-17）：**item id `3803035225`**，`visibility` 是 `private`，
+      `mod_id.txt` 已在工作区，**别删** —— 以后更新靠它认条目。
+      条目页 https://steamcommunity.com/sharedfiles/filedetails/?id=3803035225
+      预览图、中英两份标题描述、三个依赖都上了。
+- [ ] 作者自己订阅装一遍确认能加载，确认了把 `publish/workshop.json` 的 `visibility`
+      改成 `public` 重传一次。
 
 ### GitHub 仓库
 
@@ -81,7 +84,9 @@
       RebalancedSpire / RitsuLib 四个程序集的引用关系
 - [x] `.gitignore` 复核：`local.props`、`bin`、`obj`、`.godot` 不进仓库；
       仓库里没有任何第三方二进制。（原来还忽略了 `**/publish/`，会把发布资料一起挡掉，已删）
-- [ ] 远端仓库 `https://github.com/bingyang1132/AutoRebalancedSpire`（public，默认分支 `main`）
+- [x] 远端仓库 https://github.com/bingyang1132/AutoRebalancedSpire 已推（默认分支 `main`，
+      本地分支从 `master` 改名成 `main` 对齐）。**目前是 private** —— 工坊正文里给了这个链接，
+      发布前要改成 public，否则订阅者点过去是 404。
 - [ ] tag `v1.0.0` 与 GitHub release。**`gh release create` 会被本地权限策略拦下，
       这一步每版都要交给作者自己跑**（AutoWatcher 1.0.4 那次撞过）。
 
