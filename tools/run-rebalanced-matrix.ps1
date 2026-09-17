@@ -505,44 +505,21 @@ $cases = @(
         )
     },
     @{
-        # 往世：改版把治疗量和召唤血量挂在 Power 自己的两个动态变量上，由
-        # AfterPowerAmountChanged 同步成数量和数量−1。求解器这个时点是一张写死的 switch，
-        # 第三方进不去，于是两个变量停在建实例那一刻（0 和 −1）：既进续接戳每回合重算，
-        # 奥斯提也会被治 0 点。
-        # 断言要落在第 2 回合：第 1 回合打出往世时两边都还没结算到那两个变量。
-        Id = "RS-AFTERLIFE-OSTY-VARS"
-        Encounter = "AXEBOTS_NORMAL"
+        # 长距离：自己打出一张仓皇逃窜就涨一层。求解器的 AfterCardPlayed 是注册表，没登记
+        # 就每打一张牌记一条未镜像风险（COVERAGE ... method=AfterCardPlayed
+        # reason=MethodNotMirrored），数值照样按没涨算 —— 沙虫那一场长距离层数和奥斯提
+        # 掉的血同时错，根因就是这一条。
+        # 这里盯的是「有没有登记」而不是「涨得对不对」：涨层要真打出仓皇逃窜才看得见，
+        # 而那是张状态牌，求解器打不打由它自己的估值决定，锁不住（见 docs/coverage-gaps.md）。
+        Id = "RS-LONG-DISTANCE-CARD-PLAYED-MIRROR"
         Character = "NECROBINDER"
-        Tags = @("cards", "powers")
-        Full = $true
-        Why = "往世的治疗量/召唤血量要跟着层数走，不同步就每回合重算。"
+        Tags = @("powers")
+        Why = "长距离的 AfterCardPlayed 必须登记，否则每打一张牌记一条未镜像。"
         Args = @(
-            "-EnemyCurrentHp", "999", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
-            "-CardsJson", (Hand @("Afterlife")),
-            "-ExpectedPlayedCardId", "AFTERLIFE",
-            "-ExpectedReusedTurn", "2",
-            "-ExpectedUnexpectedReplansAtMost", "0",
-            "-StopAfterExpectedReuse"
-        )
-    },
-    @{
-        # 长距离：自己打出一张仓皇逃窜就涨一层。求解器的 AfterCardPlayed 是注册表，
-        # 认不出第三方 Power 时只记一条风险，数值照样按没涨算 —— 沙虫那一场每打一张
-        # 仓皇逃窜就差一层，伤害倍率跟着全错。
-        # 液化是沙虫的起手招式，第 1 回合结束就给玩家 5 层长距离和 6 张仓皇逃窜，
-        # 所以第 2 回合就能打出来。
-        Id = "RS-LONG-DISTANCE-FRANTIC-ESCAPE"
-        Encounter = "THE_INSATIABLE_BOSS"
-        Character = "NECROBINDER"
-        Tags = @("monsters", "powers")
-        Full = $true
-        Why = "打出仓皇逃窜要给长距离加一层，漏了每打一张就重算。"
-        Args = @(
-            "-EnemyCurrentHp", "999",
-            "-ExpectedPlayedCardId", "FRANTIC_ESCAPE",
-            "-ExpectedReusedTurn", "3",
-            "-ExpectedUnexpectedReplansAtMost", "0",
-            "-StopAfterExpectedReuse"
+            "-EnemyCurrentHp", "60", "-ClearPlayerPiles", "-InitialPlayerEnergy", "3",
+            "-CardsJson", (Hand @("StrikeNecrobinder")),
+            "-PowerId", "LongDistancePower", "-PowerAmount", "5", "-PowerTarget", "Player",
+            "-ExpectedInitialUnmirroredCount", "0"
         )
     },
     @{

@@ -1,4 +1,4 @@
 
-20:01:18 开始 共 1 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
-20:03:37 [1/1] RS-OBSCURA-ILLUSION-DISILLUSION 未通过
-20:03:37 结束 通过 0/1 未通过 1 未运行 0
+20:22:42 开始 共 1 条 时限 30 分钟 进度文件 E:\Modding\SlayTheSpire2\AutoRebalancedSpire\.matrix-progress.txt
+20:24:58 [1/1] RS-LONG-DISTANCE-CARD-PLAYED-MIRROR 未通过
+20:24:59 结束 通过 0/1 未通过 1 未运行 0
