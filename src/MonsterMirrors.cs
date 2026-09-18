@@ -470,6 +470,16 @@ internal static class MonsterMirrors
                 __result = true;
                 return false;
 
+            // 肢解：改版只剩那一刀（伤害还 −4）。原版打完还往玩家弃牌堆塞 3 张伤口，
+            // 求解器那张表里就是这么写的（`AddToCombat<Wound>(player, Discard, 3)`）。
+            // 不补的话每转到这一招，模拟里的弃牌堆就比实机多 3 张伤口，
+            // 实机一对账就是「状态对不上」，整场反复重算 —— 2026-09-17 墨影幻灵那个问题包
+            // （stateMismatchReplans=2，差异写的正是 `C[5] expected=WOUND actual=<missing>`）就是这条。
+            // 张数原版进的是意图（StatusIntent(3)），改版把那条意图也去掉了，所以不会有红字提示。
+            case ("Vantom", "DISMEMBER_MOVE") when settings.Vantom:
+                __result = true;
+                return false;
+
             // 重复轰击一 / 二：改版只剩那一炮。原版这两招除了伤害还各给自己 2 力量，
             // 求解器照原版口径给，两回合下来就多出 4 点力量，一到实机就对不上、整局重算。
             // 蓄能还是给 2 力量，那条没变。
