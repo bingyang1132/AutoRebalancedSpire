@@ -1,4 +1,4 @@
-using MegaCrit.Sts2.Core.Extensions;
+﻿using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -407,7 +407,18 @@ internal static class CardMirrors
 
     /// <summary>鬼火：给能量，然后把抽牌堆里随机一个魂变成鬼火自己的复制。</summary>
     /// <remarks>
-    /// 随机取的那一步用求解器的洗牌通道，和实机取同一条随机序列。抽牌堆里没有魂就只给能量。
+    /// <para><b>「哪一个魂」这件事求解器无从预测。</b>改版那一句取的是
+    /// <c>Owner.PlayerRng.Transformations</c>，而求解器在战斗内只镜像九条运行期随机通道
+    /// （洗牌、造牌、选牌、费用、目标、充能球、药水、怪物 AI、杂项），<b>变形那一条不在里面</b>。</para>
+    ///
+    /// <para>先前这里拿 <c>CombatCardSelection</c> 的 <c>UnstableShuffle</c> 顶替，两处都错：
+    /// 通道错 —— 实机一个数都不从这条取，而这条<b>进指纹</b>；洗法也错 —— 实机是 <c>StableShuffle</c>。
+    /// 后果是抽牌堆里有 n 个魂时，预测凭空烧掉 n−1 个数、实机一个都没烧，
+    /// 于是下一个回合边界上选牌通道对不上，<b>必然重算</b>（2026-09-18 帝皇蟹那个问题包差的正是 7 个）。</para>
+    ///
+    /// <para>现在的口径：没有魂就只给能量；只有一个魂时只能是它，照变、不记风险；
+    /// 两个以上时不碰任何进指纹的通道，按牌堆顺序取第一个，并记一条未镜像风险 ——
+    /// 变形后的牌堆顺序仍然可能和实机不同，这条线该显示成红色，而不是假装算准了。</para>
     /// </remarks>
     private static void Wisp(Wisp card, CardOnPlayMirrorContext context)
     {
@@ -420,12 +431,11 @@ internal static class CardMirrors
             .ToArray();
         if (souls.Length == 0)
             return;
+        if (souls.Length > 1)
+            V.Unmirrored(context, "鬼火变的是抽牌堆里哪一个魂（实机走变形随机通道，求解器不镜像这条通道）");
 
-        PredictedCard chosen = souls.ToList()
-            .UnstableShuffle(context.Simulator.Rng.CombatCardSelection)
-            .First();
         CardChoiceSupport.TransformCards(
-            context.Simulator, [chosen], CanonicalModels.Card<Wisp>(), card.IsUpgraded);
+            context.Simulator, [souls[0]], CanonicalModels.Card<Wisp>(), card.IsUpgraded);
     }
 
     public static IEnumerable<MirroredCard> All()

@@ -1,3 +1,4 @@
+﻿using System.Collections.Concurrent;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
@@ -100,16 +101,32 @@ internal static class Verbs
     /// </remarks>
     public static void Unmirrored(CardOnPlayMirrorContext context, string what)
     {
-        EngineDiagnostics.Warn($"[AutoRebalancedSpire] 未镜像：{what}");
+        WarnOnce($"[AutoRebalancedSpire] 未镜像：{what}");
         context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
     }
 
     /// <summary>这一处需要玩家在结算中做选择，而我们还没为它开分支。</summary>
     public static void PlayerChoice(CardOnPlayMirrorContext context, string what)
     {
-        EngineDiagnostics.Warn($"[AutoRebalancedSpire] 未建模的结算内选择：{what}");
+        WarnOnce($"[AutoRebalancedSpire] 未建模的结算内选择：{what}");
         context.History.RecordRisk(PredictionRiskReason.UnresolvedPlayerChoice);
     }
+
+    /// <summary>同一句话整个进程只打一行。</summary>
+    /// <remarks>
+    /// 风险<b>每次都要记</b> —— 它跟着这条分支进结果，是「这条线别当准数看」的唯一凭据。
+    /// 但日志只需要一行：一次搜索会把同一张牌打上几千遍，原样打印会把求解器那个滚动日志冲干净
+    /// （2026-09-18 帝皇蟹的问题包里，「降灵会」这一句一场战斗印了 11857 行，真正有用的诊断被挤出去了）。
+    ///
+    /// 搜索是多线程的，所以用并发字典而不是 <c>HashSet</c>。
+    /// </remarks>
+    private static void WarnOnce(string message)
+    {
+        if (WarnedOnce.TryAdd(message, 0))
+            EngineDiagnostics.Warn(message);
+    }
+
+    private static readonly ConcurrentDictionary<string, byte> WarnedOnce = new(StringComparer.Ordinal);
 
     // ---------- 造牌 ----------
 

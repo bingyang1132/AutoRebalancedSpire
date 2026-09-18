@@ -65,6 +65,8 @@ internal static class AdapterSelfCheck
             _ = StringFieldPolicyPatch.ResolveTarget();
             _ = BranchConditionalPatch.ResolveTarget();
             _ = BloatSpawnPatch.ResolveTarget();
+            _ = ToughEggHatchPatch.ResolveTarget();
+            _ = WitherTransformPatch.ResolveTarget();
             _ = AdaptedSnapshotFallbackPatch.ResolveTarget();
             _ = HiddenDaggersShivPatch.ResolveTarget();
             _ = PowerAmountChangedDispatch.ResolveTarget();

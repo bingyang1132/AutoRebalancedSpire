@@ -96,6 +96,16 @@ public static class Entry
             harmony.Patch(
                 BloatSpawnPatch.ResolveTarget(),
                 prefix: new HarmonyMethod(typeof(BloatSpawnPatch), nameof(BloatSpawnPatch.Prefix)));
+            // 结实的卵的孵化计数：改版比原版多 1，挂层数发生在召唤支援里，招式镜像够不着。
+            harmony.Patch(
+                ToughEggHatchPatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(ToughEggHatchPatch), nameof(ToughEggHatchPatch.Postfix)));
+            // 带「无法逃脱」的凋萎被变形掉之后，改版会补发一张；卡牌变形没有登记点，补收口那一处。
+            harmony.Patch(
+                WitherTransformPatch.ResolveTarget(),
+                postfix: new HarmonyMethod(
+                    typeof(WitherTransformPatch), nameof(WitherTransformPatch.Postfix)));
             // 我们接管了 OnPlay 的牌，求解器那一层按原版语义写的「补偿」要一起关掉。
             harmony.Patch(
                 OnPlayCompensationPatch.ResolveTarget(),

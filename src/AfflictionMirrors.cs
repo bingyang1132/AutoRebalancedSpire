@@ -95,10 +95,18 @@ internal static class AfflictionMirrors
         combat.CreatureEscaped(target);
     }
 
-    /// <summary>无法逃脱：带这个病症的凋萎被消耗之后，回到弃牌堆。</summary>
+    /// <summary>无法逃脱：带这个病症的凋萎被消耗之后，回到弃牌堆的随机位置。</summary>
     /// <remarks>
     /// 也就是说这张牌消耗不掉 —— 不镜像的话求解器会以为烧掉它就一了百了，
     /// 把一条实际上还会再吃伤害的路线算成安全的。
+    ///
+    /// <para><b>位置必须是随机，不能是牌堆底。</b>改版那一句是
+    /// <c>CardPileCmd.Add(wither, PileType.Discard, CardPilePosition.Random)</c>，随机位置那一步会从
+    /// <b>洗牌随机通道</b>取一个数。求解器的 <c>AddToPile</c> 在 <c>Random</c> 上取的是同一条通道、
+    /// 同样一个数，所以只要位置参数一致，两边的随机序列就仍然对齐。
+    /// 先前这里用的是默认的牌堆底：一个数都不取，于是每消耗一张凋萎，预测和实机的洗牌计数就差 1 ——
+    /// 下一次洗牌顺序整个对不上，回合边界上必然重算。永世沙漏那一场一回合塞 4 张凋萎、
+    /// 而凋萎是虚幻牌回合结束全消耗，所以差值一回合就攒到 4（2026-09-18 的问题包正是这个数）。</para>
     /// </remarks>
     private static void WitheringAfterExhausted(
         Withering affliction,
@@ -106,6 +114,6 @@ internal static class AfflictionMirrors
     {
         if (context.PreviewCard is not Wither)
             return;
-        context.Simulator.AddToPile([context.Card], PileType.Discard);
+        context.Simulator.AddToPile([context.Card], PileType.Discard, CardPilePosition.Random);
     }
 }
